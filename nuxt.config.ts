@@ -1,0 +1,35 @@
+// https://nuxt.com/docs/api/configuration/nuxt-config
+export default defineNuxtConfig({
+  modules: [
+    '@nuxt/eslint',
+    '@nuxt/ui'
+  ],
+
+  devtools: {
+    enabled: true
+  },
+
+  css: ['~/assets/css/main.css'],
+
+  devServer: {
+    port: 3847
+  },
+
+  routeRules: {
+    '/api/**': { cors: false },
+    '/login': { ssr: false },
+    '/register': { ssr: false },
+    '/contacts': { ssr: false }
+  },
+
+  compatibilityDate: '2025-01-15',
+
+  eslint: {
+    config: {
+      stylistic: {
+        commaDangle: 'never',
+        braceStyle: '1tbs'
+      }
+    }
+  }
+})

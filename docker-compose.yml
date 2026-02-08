@@ -1,0 +1,73 @@
+name: hourinbox
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: hourinbox-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - hourinbox-pgdata:/var/lib/postgresql/data
+    ports:
+      - "5487:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - hourinbox-net
+
+  redis:
+    image: redis:7-alpine
+    container_name: hourinbox-redis
+    restart: unless-stopped
+    ports:
+      - "6391:6379"
+    volumes:
+      - hourinbox-redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - hourinbox-net
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+    container_name: hourinbox-app
+    restart: unless-stopped
+    ports:
+      - "${NUXT_PORT}:${NUXT_PORT}"
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      REDIS_URL: redis://redis:6379
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      NUXT_PORT: ${NUXT_PORT}
+      NUXT_SESSION_SECRET: ${NUXT_SESSION_SECRET}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - hourinbox-net
+
+volumes:
+  hourinbox-pgdata:
+  hourinbox-redis:
+
+networks:
+  hourinbox-net:
+    driver: bridge

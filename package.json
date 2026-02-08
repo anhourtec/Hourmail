@@ -1,0 +1,39 @@
+{
+  "name": "hourinbox",
+  "private": true,
+  "type": "module",
+  "description": "Modern web-based IMAP email client for organizations — built by Anhourtec",
+  "scripts": {
+    "build": "prisma generate && nuxt build",
+    "dev": "prisma generate && (prisma db push --skip-generate || true) && nuxt dev --host 0.0.0.0",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare",
+    "lint": "eslint .",
+    "typecheck": "nuxt typecheck",
+    "db:generate": "prisma generate",
+    "db:push": "prisma db push",
+    "db:migrate": "prisma migrate dev",
+    "db:studio": "prisma studio"
+  },
+  "dependencies": {
+    "@iconify-json/lucide": "^1.2.87",
+    "@iconify-json/simple-icons": "^1.2.68",
+    "@nuxt/ui": "^4.4.0",
+    "@prisma/client": "^6.5.0",
+    "imapflow": "^1.0.171",
+    "ioredis": "^5.6.0",
+    "mailparser": "^3.7.2",
+    "nodemailer": "^6.10.0",
+    "nuxt": "^4.3.0",
+    "tailwindcss": "^4.1.18"
+  },
+  "devDependencies": {
+    "@nuxt/eslint": "^1.13.0",
+    "@types/mailparser": "^3.4.5",
+    "@types/nodemailer": "^6.4.17",
+    "eslint": "^9.39.2",
+    "prisma": "^6.5.0",
+    "typescript": "^5.9.3",
+    "vue-tsc": "^3.2.4"
+  }
+}

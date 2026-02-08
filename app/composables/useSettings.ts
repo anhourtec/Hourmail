@@ -1,0 +1,51 @@
+interface UserSettings {
+  pushNotifications: boolean
+  newEmailSound: boolean
+  sendEmailSound: boolean
+  pollInterval: number // seconds
+}
+
+const defaults: UserSettings = {
+  pushNotifications: true,
+  newEmailSound: true,
+  sendEmailSound: true,
+  pollInterval: 30
+}
+
+const settings = reactive<UserSettings>({ ...defaults })
+let settingsLoadedFor = ''
+
+function getStorageKey(email: string) {
+  return `hourinbox_settings_${email}`
+}
+
+export function useSettings() {
+  function loadSettings(email: string) {
+    if (!import.meta.client || settingsLoadedFor === email) return
+    settingsLoadedFor = email
+    try {
+      const stored = localStorage.getItem(getStorageKey(email))
+      if (stored) {
+        const parsed = JSON.parse(stored)
+        Object.assign(settings, { ...defaults, ...parsed })
+      }
+    } catch { /* ignore */ }
+  }
+
+  function saveSettings(email: string) {
+    if (!import.meta.client) return
+    localStorage.setItem(getStorageKey(email), JSON.stringify({ ...settings }))
+  }
+
+  function updateSetting<K extends keyof UserSettings>(email: string, key: K, value: UserSettings[K]) {
+    settings[key] = value
+    saveSettings(email)
+  }
+
+  return {
+    settings,
+    loadSettings,
+    saveSettings,
+    updateSetting
+  }
+}
