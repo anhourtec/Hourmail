@@ -38,7 +38,8 @@ export default defineEventHandler(async (event) => {
   const authResult = await verifyImapCredentials(
     org.imapHost,
     org.imapPort,
-    org.useTls,
+    org.tlsMode,
+    org.rejectUnauthorized,
     email,
     password
   )
@@ -62,7 +63,8 @@ export default defineEventHandler(async (event) => {
     imapPort: org.imapPort,
     smtpHost: org.smtpHost,
     smtpPort: org.smtpPort,
-    useTls: org.useTls
+    tlsMode: org.tlsMode,
+    rejectUnauthorized: org.rejectUnauthorized
   }
 
   const token = await createSession(event, sessionData)

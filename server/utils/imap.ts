@@ -101,7 +101,8 @@ function parseEnvelopeAddress(a: ImapEnvelopeAddress): { name: string, address: 
 export async function testConnection(
   host: string,
   port: number,
-  useTls: boolean,
+  tlsMode: string,
+  rejectUnauthorized: boolean,
   timeoutMs: number = 10000
 ): Promise<{ success: boolean, error?: string }> {
   return new Promise((resolve) => {
@@ -123,8 +124,8 @@ export async function testConnection(
 
     let socket: net.Socket | tls.TLSSocket
 
-    if (useTls) {
-      socket = tls.connect({ host, port, rejectUnauthorized: true }, onConnect)
+    if (tlsMode === 'tls') {
+      socket = tls.connect({ host, port, rejectUnauthorized }, onConnect)
     } else {
       socket = net.connect({ host, port }, onConnect)
     }
@@ -137,11 +138,12 @@ function createImapClient(session: SessionData, password: string): ImapFlow {
   return new ImapFlow({
     host: session.imapHost,
     port: session.imapPort,
-    secure: session.useTls,
+    secure: session.tlsMode === 'tls',
     auth: {
       user: session.email,
       pass: password
     },
+    tls: { rejectUnauthorized: session.rejectUnauthorized },
     logger: false
   })
 }
@@ -149,15 +151,17 @@ function createImapClient(session: SessionData, password: string): ImapFlow {
 export async function verifyImapCredentials(
   host: string,
   port: number,
-  useTls: boolean,
+  tlsMode: string,
+  rejectUnauthorized: boolean,
   email: string,
   password: string
 ): Promise<{ success: boolean, error?: string }> {
   const client = new ImapFlow({
     host,
     port,
-    secure: useTls,
+    secure: tlsMode === 'tls',
     auth: { user: email, pass: password },
+    tls: { rejectUnauthorized },
     logger: false
   })
 

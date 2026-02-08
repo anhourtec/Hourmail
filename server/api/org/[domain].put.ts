@@ -6,7 +6,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const body = await readBody(event)
-  const { name, imapHost, imapPort, smtpHost, smtpPort, useTls } = body
+  const { name, imapHost, imapPort, smtpHost, smtpPort, tlsMode, rejectUnauthorized } = body
 
   const org = await prisma.organization.findUnique({
     where: { domain: domainParam.toLowerCase() }
@@ -24,7 +24,8 @@ export default defineEventHandler(async (event) => {
       ...(imapPort !== undefined && { imapPort }),
       ...(smtpHost !== undefined && { smtpHost: smtpHost.trim() }),
       ...(smtpPort !== undefined && { smtpPort }),
-      ...(useTls !== undefined && { useTls })
+      ...(tlsMode !== undefined && { tlsMode }),
+      ...(rejectUnauthorized !== undefined && { rejectUnauthorized })
     }
   })
 

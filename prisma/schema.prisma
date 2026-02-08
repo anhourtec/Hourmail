@@ -15,7 +15,8 @@ model Organization {
   imapPort  Int      @default(993)
   smtpHost  String
   smtpPort  Int      @default(465)
-  useTls    Boolean  @default(true)
+  tlsMode            String   @default("tls")
+  rejectUnauthorized Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

@@ -49,22 +49,23 @@ User reads/sends email → ImapFlow (read) / Nodemailer (send) → mail server
 
 ### Organization
 ```
-id            UUID (primary key)
-name          String ("Anhourtec")
-domain        String (unique, "anhourtec.com")
-imapHost      String ("imap.purelymail.com")
-imapPort      Int (993)
-smtpHost      String ("smtp.purelymail.com")
-smtpPort      Int (465)
-useTls        Boolean (true)
-createdAt     DateTime
-updatedAt     DateTime
+id                  UUID (primary key)
+name                String ("Anhourtec")
+domain              String (unique, "anhourtec.com")
+imapHost            String ("imap.purelymail.com")
+imapPort            Int (993)
+smtpHost            String ("smtp.purelymail.com")
+smtpPort            Int (465)
+tlsMode             String ("tls" | "starttls" | "none")
+rejectUnauthorized  Boolean (true)
+createdAt           DateTime
+updatedAt           DateTime
 ```
 
 ### Session (Redis)
 ```
 key:    session:{token}
-value:  JSON { email, orgId, imapHost, imapPort, smtpHost, smtpPort, useTls }
+value:  JSON { email, orgId, imapHost, imapPort, smtpHost, smtpPort, tlsMode, rejectUnauthorized }
 ttl:    24 hours
 ```
 

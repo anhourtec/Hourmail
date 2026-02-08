@@ -27,11 +27,13 @@ export async function sendMail(
   const transporter = nodemailer.createTransport({
     host: session.smtpHost,
     port: session.smtpPort,
-    secure: session.useTls,
+    secure: session.tlsMode === 'tls',
+    requireTLS: session.tlsMode === 'starttls',
     auth: {
       user: session.email,
       pass: password
-    }
+    },
+    tls: { rejectUnauthorized: session.rejectUnauthorized }
   })
 
   const result = await transporter.sendMail({

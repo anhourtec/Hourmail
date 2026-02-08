@@ -13,7 +13,8 @@ export interface SessionData {
   imapPort: number
   smtpHost: string
   smtpPort: number
-  useTls: boolean
+  tlsMode: string
+  rejectUnauthorized: boolean
 }
 
 function getSessionSecret(): string {

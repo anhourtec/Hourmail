@@ -1,6 +1,6 @@
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
-  const { name, domain, imapHost, imapPort, smtpHost, smtpPort, useTls } = body
+  const { name, domain, imapHost, imapPort, smtpHost, smtpPort, tlsMode, rejectUnauthorized } = body
 
   // Validate required fields
   if (!name || !domain || !imapHost || !smtpHost) {
@@ -27,10 +27,11 @@ export default defineEventHandler(async (event) => {
 
   const resolvedImapPort = imapPort || 993
   const resolvedSmtpPort = smtpPort || 465
-  const resolvedUseTls = useTls !== false
+  const resolvedTlsMode = tlsMode || 'tls'
+  const resolvedRejectUnauthorized = rejectUnauthorized !== false
 
   // Test IMAP connection
-  const imapTest = await testConnection(imapHost.trim(), resolvedImapPort, resolvedUseTls)
+  const imapTest = await testConnection(imapHost.trim(), resolvedImapPort, resolvedTlsMode, resolvedRejectUnauthorized)
   if (!imapTest.success) {
     throw createError({
       statusCode: 422,
@@ -39,7 +40,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // Test SMTP connection
-  const smtpTest = await testConnection(smtpHost.trim(), resolvedSmtpPort, resolvedUseTls)
+  const smtpTest = await testConnection(smtpHost.trim(), resolvedSmtpPort, resolvedTlsMode, resolvedRejectUnauthorized)
   if (!smtpTest.success) {
     throw createError({
       statusCode: 422,
@@ -56,7 +57,8 @@ export default defineEventHandler(async (event) => {
       imapPort: resolvedImapPort,
       smtpHost: smtpHost.trim(),
       smtpPort: resolvedSmtpPort,
-      useTls: resolvedUseTls
+      tlsMode: resolvedTlsMode,
+      rejectUnauthorized: resolvedRejectUnauthorized
     }
   })
 

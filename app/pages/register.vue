@@ -9,10 +9,34 @@ const imapHost = ref('')
 const imapPort = ref(993)
 const smtpHost = ref('')
 const smtpPort = ref(465)
-const useTls = ref(true)
+const useSslTls = ref(true)
+const useStarttls = ref(false)
+const rejectUnauthorized = ref(true)
 const error = ref('')
 const success = ref(false)
 const loading = ref(false)
+
+const tlsMode = computed(() => {
+  if (useSslTls.value) return 'tls'
+  if (useStarttls.value) return 'starttls'
+  return 'none'
+})
+
+watch(useSslTls, (on) => {
+  if (on) {
+    useStarttls.value = false
+    if (imapPort.value === 143) imapPort.value = 993
+    if (smtpPort.value === 587) smtpPort.value = 465
+  }
+})
+
+watch(useStarttls, (on) => {
+  if (on) {
+    useSslTls.value = false
+    if (imapPort.value === 993) imapPort.value = 143
+    if (smtpPort.value === 465) smtpPort.value = 587
+  }
+})
 
 async function handleRegister() {
   error.value = ''
@@ -28,7 +52,8 @@ async function handleRegister() {
         imapPort: imapPort.value,
         smtpHost: smtpHost.value,
         smtpPort: smtpPort.value,
-        useTls: useTls.value
+        tlsMode: tlsMode.value,
+        rejectUnauthorized: rejectUnauthorized.value
       }
     })
     success.value = true
@@ -175,13 +200,33 @@ async function handleRegister() {
 
             <USeparator />
 
-            <!-- TLS toggle -->
-            <div class="flex items-center justify-between">
-              <div>
-                <p class="text-sm font-medium">Use TLS/SSL</p>
-                <p class="text-xs text-muted">Recommended</p>
+            <!-- Security settings -->
+            <div class="space-y-3">
+              <h2 class="text-xs font-semibold uppercase tracking-wide text-muted">Security</h2>
+
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="text-sm font-medium">Use SSL/TLS</p>
+                  <p class="text-xs text-muted">Ports 993 / 465 (recommended)</p>
+                </div>
+                <USwitch v-model="useSslTls" />
               </div>
-              <USwitch v-model="useTls" />
+
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="text-sm font-medium">Use STARTTLS</p>
+                  <p class="text-xs text-muted">Ports 143 / 587</p>
+                </div>
+                <USwitch v-model="useStarttls" />
+              </div>
+
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="text-sm font-medium">Reject Invalid Certificates</p>
+                  <p class="text-xs text-muted">Disable for self-signed certs</p>
+                </div>
+                <USwitch v-model="rejectUnauthorized" />
+              </div>
             </div>
 
             <UButton

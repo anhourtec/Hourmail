@@ -19,7 +19,7 @@ RUN npx nuxt build
 # ── Production image ───────────────────────────────────
 FROM base AS production
 
-RUN npm install -g prisma@6
+RUN apk add --no-cache ca-certificates && npm install -g prisma@6
 
 COPY --from=build /app/.output /app/.output
 COPY --from=build /app/prisma /app/prisma
