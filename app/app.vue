@@ -1,4 +1,6 @@
 <script setup>
+const { brand } = useAppConfig()
+
 useHead({
   meta: [
     { name: 'viewport', content: 'width=device-width, initial-scale=1' }
@@ -11,8 +13,8 @@ useHead({
   }
 })
 
-const title = 'HourInbox — Modern Web Email Client'
-const description = 'A modern, web-based IMAP email client for organizations. Gmail/Outlook-quality interface for any email server. Built by Anhourtec.'
+const title = `${brand.name} — Modern Web Email Client`
+const description = `A modern, web-based IMAP email client for organizations. Gmail/Outlook-quality interface for any email server. Built by ${brand.author}.`
 
 useSeoMeta({
   title,

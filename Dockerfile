@@ -31,4 +31,4 @@ ENV NUXT_PORT=3847
 EXPOSE 3847
 
 # Push schema to DB on startup, then run app
-CMD sh -c "prisma db push --skip-generate && node .output/server/index.mjs"
+CMD sh -c "prisma db push && node .output/server/index.mjs"

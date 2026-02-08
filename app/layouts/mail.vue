@@ -1,4 +1,5 @@
 <script setup lang="ts">
+const { brand } = useAppConfig()
 const { user, accounts, logout, switchAccount, switchingAccount, fetchAccounts } = useAuth()
 const { folders, loadingFolders, fetchFolders, currentFolder, searchMailMessages, clearSearch, searchActive, searchLoading } = useMail()
 const { openCompose, initUrlSync } = useCompose()
@@ -270,8 +271,8 @@ function navigateToFolder(path: string) {
       <!-- Logo -->
       <div class="shrink-0" :class="sidebarOpen ? 'px-5 pt-5 pb-3' : 'px-3 pt-5 pb-3'">
         <NuxtLink to="/inbox" class="flex items-center" :class="sidebarOpen ? 'gap-0.5' : 'justify-center'">
-          <img src="/logo.png" alt="HourInbox" class="shrink-0" :class="sidebarOpen ? 'w-12 h-12' : 'w-10 h-10'" />
-          <span v-if="sidebarOpen" class="font-bold text-lg tracking-tight">HourInbox</span>
+          <img :src="brand.logo" :alt="brand.name" class="shrink-0" :class="sidebarOpen ? 'w-12 h-12' : 'w-10 h-10'" />
+          <span v-if="sidebarOpen" class="font-bold text-lg tracking-tight">{{ brand.name }}</span>
         </NuxtLink>
       </div>
 
@@ -554,8 +555,8 @@ function navigateToFolder(path: string) {
     >
       <div class="px-5 pt-5 pb-3">
         <NuxtLink to="/inbox" class="flex items-center gap-0.5">
-          <img src="/logo.png" alt="HourInbox" class="w-12 h-12 shrink-0" />
-          <span class="font-bold text-lg tracking-tight">HourInbox</span>
+          <img :src="brand.logo" :alt="brand.name" class="w-12 h-12 shrink-0" />
+          <span class="font-bold text-lg tracking-tight">{{ brand.name }}</span>
         </NuxtLink>
       </div>
 

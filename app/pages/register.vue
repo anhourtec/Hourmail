@@ -1,6 +1,8 @@
 <script setup lang="ts">
 definePageMeta({ layout: false })
 
+const { brand } = useAppConfig()
+
 const name = ref('')
 const domain = ref('')
 const imapHost = ref('')
@@ -56,8 +58,8 @@ async function handleRegister() {
         <!-- Mobile logo -->
         <div class="lg:hidden text-center mb-6">
           <div class="flex items-center justify-center gap-0.5 mb-2">
-            <img src="/logo.png" alt="HourInbox" class="w-14 h-14" />
-            <span class="text-xl font-bold tracking-tight">HourInbox</span>
+            <img :src="brand.logo" :alt="brand.name" class="w-14 h-14" />
+            <span class="text-xl font-bold tracking-tight">{{ brand.name }}</span>
           </div>
         </div>
 
@@ -211,7 +213,7 @@ async function handleRegister() {
 
           <!-- Mobile footer -->
           <p class="lg:hidden text-center text-xs text-muted mt-8">
-            Built by Anhourtec &mdash; Open source email client.
+            Built by {{ brand.author }} &mdash; Open source email client.
           </p>
         </template>
       </div>
@@ -221,8 +223,8 @@ async function handleRegister() {
     <div class="hidden lg:flex lg:w-5/12 flex-col justify-between p-12 bg-elevated">
       <div>
         <div class="flex items-center gap-0.5">
-          <img src="/logo.png" alt="HourInbox" class="w-14 h-14" />
-          <span class="text-xl font-bold tracking-tight">HourInbox</span>
+          <img :src="brand.logo" :alt="brand.name" class="w-14 h-14" />
+          <span class="text-xl font-bold tracking-tight">{{ brand.name }}</span>
         </div>
       </div>
 
@@ -231,7 +233,7 @@ async function handleRegister() {
           Set up your<br />organization<br />in minutes.
         </h2>
         <p class="text-muted text-lg leading-relaxed">
-          Connect your mail server and let your team start using HourInbox right away.
+          Connect your mail server and let your team start using {{ brand.name }} right away.
         </p>
         <div class="space-y-3 pt-2">
           <div class="flex items-center gap-3">
@@ -250,7 +252,7 @@ async function handleRegister() {
       </div>
 
       <p class="text-xs text-muted">
-        Built by Anhourtec &mdash; Open source email client.
+        Built by {{ brand.author }} &mdash; Open source email client.
       </p>
     </div>
   </div>

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 definePageMeta({ layout: false, middleware: 'auth' })
 
+const { brand } = useAppConfig()
 const route = useRoute()
 const { login, user } = useAuth()
 const isAddAccount = computed(() => route.query.addAccount === 'true')
@@ -36,8 +37,8 @@ async function handleLogin() {
     <div class="hidden lg:flex lg:w-1/2 flex-col justify-between p-12 bg-elevated">
       <div>
         <div class="flex items-center gap-0.5">
-          <img src="/logo.png" alt="HourInbox" class="w-14 h-14" />
-          <span class="text-xl font-bold tracking-tight">HourInbox</span>
+          <img :src="brand.logo" :alt="brand.name" class="w-14 h-14" />
+          <span class="text-xl font-bold tracking-tight">{{ brand.name }}</span>
         </div>
       </div>
 
@@ -65,7 +66,7 @@ async function handleLogin() {
       </div>
 
       <p class="text-xs text-muted">
-        Built by Anhourtec &mdash; Open source email client.
+        Built by {{ brand.author }} &mdash; Open source email client.
       </p>
     </div>
 
@@ -75,8 +76,8 @@ async function handleLogin() {
         <!-- Mobile logo -->
         <div class="lg:hidden text-center mb-10">
           <div class="flex items-center justify-center gap-0.5 mb-2">
-            <img src="/logo.png" alt="HourInbox" class="w-14 h-14" />
-            <span class="text-xl font-bold tracking-tight">HourInbox</span>
+            <img :src="brand.logo" :alt="brand.name" class="w-14 h-14" />
+            <span class="text-xl font-bold tracking-tight">{{ brand.name }}</span>
           </div>
         </div>
 
@@ -156,7 +157,7 @@ async function handleLogin() {
 
         <!-- Mobile footer -->
         <p class="lg:hidden text-center text-xs text-muted mt-8">
-          Built by Anhourtec &mdash; Open source email client.
+          Built by {{ brand.author }} &mdash; Open source email client.
         </p>
       </div>
     </div>
