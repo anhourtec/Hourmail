@@ -38,6 +38,15 @@ source .env
 
 APP_PORT=${NUXT_PORT:-3847}
 
+# Stop HourInbox containers if already running
+for container in hourinbox-app hourinbox-postgres hourinbox-redis; do
+  if docker ps -q -f name="^${container}$" | grep -q .; then
+    echo "Stopping $container..."
+    docker stop "$container" && docker rm "$container"
+  fi
+done
+
+echo ""
 echo "Building and starting containers..."
 echo ""
 
