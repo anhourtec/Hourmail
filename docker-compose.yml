@@ -54,7 +54,7 @@ services:
       REDIS_URL: redis://redis:6379
       NODE_ENV: production
       HOST: 0.0.0.0
-      NUXT_PORT: ${NUXT_PORT}
+      PORT: ${NUXT_PORT}
       NUXT_SESSION_SECRET: ${NUXT_SESSION_SECRET}
     depends_on:
       postgres:
