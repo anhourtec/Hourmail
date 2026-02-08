@@ -28,6 +28,7 @@ const draftSource = reactive<{ uid: number, folder: string } | { uid: 0, folder:
 // Track the server-side draft UID for replace-on-save
 const serverDraftUid = ref(0)
 let serverSaveInFlight = false
+let discarding = false
 
 let urlSyncInitialized = false
 let draftSaveTimer: ReturnType<typeof setInterval> | null = null
@@ -108,6 +109,25 @@ function saveDraftToServerQuiet() {
       replaceUid: serverDraftUid.value || undefined
     }
   }).then((res) => {
+    if (discarding) {
+      // Compose was discarded/sent while this save was in-flight.
+      // Delete the newly created draft directly on the server — don't use
+      // deleteEmail() since this draft was never reflected in client state,
+      // so optimistic count adjustments would over-decrement the folder count.
+      if (res.uid) {
+        const { folders, invalidateFolderCache, fetchFolders } = useMail()
+        const draftsFolder = folders.value.find(f => f.specialUse === '\\Drafts')
+        const draftsPath = draftsFolder?.path || 'Drafts'
+        $fetch(`/api/mail/messages/${res.uid}`, {
+          method: 'DELETE',
+          query: { folder: draftsPath }
+        }).then(() => {
+          invalidateFolderCache(draftsPath)
+          fetchFolders(true)
+        }).catch(() => {})
+      }
+      return
+    }
     if (res.uid) serverDraftUid.value = res.uid
     draftSavedAt.value = new Date()
     const { fetchFolders, currentFolder, fetchMessages, invalidateFolderCache, folders } = useMail()
@@ -128,6 +148,7 @@ function saveDraftToServerQuiet() {
 
 export function useCompose() {
   function openCompose(data?: Partial<ComposeData>, source?: { uid: number, folder: string }) {
+    discarding = false
     if (data && (data.to || data.subject || data.body)) {
       // Opening with specific data (reply, forward, draft edit, etc.)
       composeData.to = data.to || ''
@@ -213,6 +234,7 @@ export function useCompose() {
 
   function discardCompose() {
     stopDraftAutoSave()
+    discarding = true
     // Delete the server draft if one was saved
     if (serverDraftUid.value) {
       const uidToDelete = serverDraftUid.value

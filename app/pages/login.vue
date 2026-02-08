@@ -10,6 +10,7 @@ const email = ref('')
 const password = ref('')
 const error = ref('')
 const loading = ref(false)
+const showPassword = ref(false)
 
 async function handleLogin() {
   error.value = ''
@@ -150,13 +151,24 @@ async function handleLogin() {
           <UFormField label="Password">
             <UInput
               v-model="password"
-              type="password"
+              :type="showPassword ? 'text' : 'password'"
               placeholder="Your email password"
               icon="i-lucide-lock"
               size="xl"
               class="w-full"
               required
-            />
+            >
+              <template #trailing>
+                <button
+                  type="button"
+                  tabindex="-1"
+                  class="text-muted hover:text-highlighted transition-colors"
+                  @click="showPassword = !showPassword"
+                >
+                  <UIcon :name="showPassword ? 'i-lucide-eye-off' : 'i-lucide-eye'" />
+                </button>
+              </template>
+            </UInput>
           </UFormField>
 
           <UButton
