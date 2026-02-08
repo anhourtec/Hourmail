@@ -32,25 +32,46 @@ const statusColor = (status: string) => {
   <div class="h-full flex flex-col">
     <!-- Toolbar -->
     <div class="flex items-center gap-1 px-2 sm:px-4 py-1.5 border-b border-default shrink-0">
-      <UIcon name="i-lucide-send" class="text-primary text-base ml-1" />
-      <h2 class="text-sm font-semibold ml-1">Outbox</h2>
+      <UIcon
+        name="i-lucide-send"
+        class="text-primary text-base ml-1"
+      />
+      <h2 class="text-sm font-semibold ml-1">
+        Outbox
+      </h2>
       <div class="flex-1" />
-      <span v-if="outboxMessages.length > 0" class="text-xs text-muted hidden sm:inline">
+      <span
+        v-if="outboxMessages.length > 0"
+        class="text-xs text-muted hidden sm:inline"
+      >
         {{ outboxMessages.length }} {{ outboxMessages.length === 1 ? 'message' : 'messages' }}
       </span>
     </div>
 
     <!-- Empty -->
-    <div v-if="outboxMessages.length === 0" class="flex items-center justify-center flex-1">
+    <div
+      v-if="outboxMessages.length === 0"
+      class="flex items-center justify-center flex-1"
+    >
       <div class="text-center">
-        <UIcon name="i-lucide-send" class="text-5xl text-muted mb-3" />
-        <h3 class="text-lg font-medium mb-1">Outbox is empty</h3>
-        <p class="text-muted text-sm">Emails being sent will appear here</p>
+        <UIcon
+          name="i-lucide-send"
+          class="text-5xl text-muted mb-3"
+        />
+        <h3 class="text-lg font-medium mb-1">
+          Outbox is empty
+        </h3>
+        <p class="text-muted text-sm">
+          Emails being sent will appear here
+        </p>
       </div>
     </div>
 
     <!-- Message List -->
-    <div v-else class="flex-1 overflow-y-auto">
+    <div
+      v-else
+      class="flex-1 overflow-y-auto"
+    >
       <div
         v-for="msg in outboxMessages"
         :key="msg.id"
@@ -71,8 +92,15 @@ const statusColor = (status: string) => {
               {{ formatTime(msg.queuedAt) }}
             </span>
           </div>
-          <p class="text-sm text-muted truncate">{{ msg.subject }}</p>
-          <p v-if="msg.error" class="text-xs text-red-500 mt-0.5">{{ msg.error }}</p>
+          <p class="text-sm text-muted truncate">
+            {{ msg.subject }}
+          </p>
+          <p
+            v-if="msg.error"
+            class="text-xs text-red-500 mt-0.5"
+          >
+            {{ msg.error }}
+          </p>
         </div>
 
         <!-- Actions -->

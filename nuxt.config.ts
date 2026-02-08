@@ -11,15 +11,15 @@ export default defineNuxtConfig({
 
   css: ['~/assets/css/main.css'],
 
-  devServer: {
-    port: 3847
-  },
-
   routeRules: {
     '/api/**': { cors: false },
     '/login': { ssr: false },
     '/register': { ssr: false },
     '/contacts': { ssr: false }
+  },
+
+  devServer: {
+    port: 3847
   },
 
   compatibilityDate: '2025-01-15',

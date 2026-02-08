@@ -17,6 +17,9 @@ if (user.value) {
 
 <template>
   <div class="flex items-center justify-center h-screen">
-    <UIcon name="i-lucide-loader-2" class="animate-spin text-2xl text-muted" />
+    <UIcon
+      name="i-lucide-loader-2"
+      class="animate-spin text-2xl text-muted"
+    />
   </div>
 </template>

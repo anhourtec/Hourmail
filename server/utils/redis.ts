@@ -1,20 +1,19 @@
 import Redis from 'ioredis'
 
-let redis: Redis
-
 declare global {
   var __redis: Redis | undefined
 }
 
 const redisUrl = process.env.REDIS_URL || 'redis://localhost:6391'
 
-if (process.env.NODE_ENV === 'production') {
-  redis = new Redis(redisUrl)
-} else {
+function createRedis() {
+  if (process.env.NODE_ENV === 'production') {
+    return new Redis(redisUrl)
+  }
   if (!global.__redis) {
     global.__redis = new Redis(redisUrl)
   }
-  redis = global.__redis
+  return global.__redis
 }
 
-export { redis }
+export const redis = createRedis()

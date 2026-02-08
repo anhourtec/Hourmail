@@ -84,7 +84,7 @@ export function useNotifications() {
 
   async function checkForNewEmails() {
     try {
-      const data = await $fetch<{ folders: { path: string; unseen: number }[] }>('/api/mail/folders')
+      const data = await $fetch<{ folders: { path: string, unseen: number }[] }>('/api/mail/folders')
       const inbox = data.folders.find(f => f.path === 'INBOX')
       if (!inbox) return
 

@@ -17,7 +17,7 @@ export default defineEventHandler(async (event) => {
   let to: string, cc: string | undefined, bcc: string | undefined
   let subject: string, text: string | undefined, html: string | undefined
   let replyTo: string | undefined, inReplyTo: string | undefined
-  let attachments: { filename: string; content: Buffer; contentType: string }[] = []
+  let attachments: { filename: string, content: Buffer, contentType: string }[] = []
 
   if (contentType.includes('multipart/form-data')) {
     const formData = await readMultipartFormData(event)
@@ -26,7 +26,7 @@ export default defineEventHandler(async (event) => {
     }
 
     const fields: Record<string, string> = {}
-    const files: { filename: string; content: Buffer; contentType: string }[] = []
+    const files: { filename: string, content: Buffer, contentType: string }[] = []
 
     for (const part of formData) {
       if (part.filename) {

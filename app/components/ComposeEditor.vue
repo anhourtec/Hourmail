@@ -112,8 +112,14 @@ const toolbarButtons = [
       class="flex items-center gap-0.5 px-2 py-1 border-b border-default flex-wrap"
       :class="compact ? 'bg-default/50' : ''"
     >
-      <template v-for="(btn, i) in toolbarButtons" :key="i">
-        <div v-if="btn.divider" class="w-px h-4 bg-default mx-0.5" />
+      <template
+        v-for="(btn, i) in toolbarButtons"
+        :key="i"
+      >
+        <div
+          v-if="btn.divider"
+          class="w-px h-4 bg-default mx-0.5"
+        />
         <button
           v-else
           type="button"
@@ -122,7 +128,10 @@ const toolbarButtons = [
           @mousedown.prevent
           @click="execCmd(btn.cmd!)"
         >
-          <UIcon :name="btn.icon!" class="text-sm" />
+          <UIcon
+            :name="btn.icon!"
+            class="text-sm"
+          />
         </button>
       </template>
 
@@ -134,13 +143,22 @@ const toolbarButtons = [
         @mousedown.prevent
         @click="openLinkDialog"
       >
-        <UIcon name="i-lucide-link" class="text-sm" />
+        <UIcon
+          name="i-lucide-link"
+          class="text-sm"
+        />
       </button>
     </div>
 
     <!-- Link dialog -->
-    <div v-if="showLinkDialog" class="flex items-center gap-2 px-3 py-2 bg-elevated border-b border-default">
-      <UIcon name="i-lucide-link" class="text-muted text-sm shrink-0" />
+    <div
+      v-if="showLinkDialog"
+      class="flex items-center gap-2 px-3 py-2 bg-elevated border-b border-default"
+    >
+      <UIcon
+        name="i-lucide-link"
+        class="text-muted text-sm shrink-0"
+      />
       <input
         id="link-url-input"
         v-model="linkUrl"
@@ -149,9 +167,19 @@ const toolbarButtons = [
         class="flex-1 bg-transparent text-sm outline-none"
         @keydown.enter="insertLink"
         @keydown.escape="showLinkDialog = false"
+      >
+      <UButton
+        label="Insert"
+        size="xs"
+        @click="insertLink"
       />
-      <UButton label="Insert" size="xs" @click="insertLink" />
-      <UButton icon="i-lucide-x" variant="ghost" color="neutral" size="xs" @click="showLinkDialog = false" />
+      <UButton
+        icon="i-lucide-x"
+        variant="ghost"
+        color="neutral"
+        size="xs"
+        @click="showLinkDialog = false"
+      />
     </div>
 
     <!-- Editable area -->

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import DOMPurify from 'dompurify'
+
 definePageMeta({ layout: 'mail', middleware: 'auth' })
 
 const route = useRoute()
@@ -32,7 +34,7 @@ function showPartialFromList() {
   } else {
     const decoded = decodeMessageId(idParam)
     if (decoded) {
-      listMsg = messages.value.find(m => {
+      listMsg = messages.value.find((m) => {
         const stripped = m.messageId?.replace(/^<|>$/g, '')
         return stripped === decoded
       })
@@ -45,7 +47,7 @@ function showPartialFromList() {
       html: '',
       text: '',
       attachments: []
-    } as any
+    } as unknown as typeof currentMessage.value
     uid.value = listMsg.uid
   }
 }
@@ -60,7 +62,7 @@ onMounted(async () => {
   } else {
     const decoded = decodeMessageId(idParam)
     const fromList = decoded
-      ? messages.value.find(m => {
+      ? messages.value.find((m) => {
           const stripped = m.messageId?.replace(/^<|>$/g, '')
           return stripped === decoded
         })
@@ -273,10 +275,14 @@ function getAttachmentIcon(contentType: string) {
   return 'i-lucide-file'
 }
 
-function isViewableType(contentType: string) {
-  if (!contentType) return false
-  return contentType.startsWith('image/') || contentType === 'application/pdf' || contentType.startsWith('text/')
-}
+const sanitizedHtml = computed(() => {
+  if (!currentMessage.value?.html) return ''
+  return DOMPurify.sanitize(currentMessage.value.html, {
+    FORBID_TAGS: ['script', 'style', 'iframe', 'object', 'embed', 'form', 'input', 'textarea', 'button'],
+    FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover', 'onfocus', 'onblur', 'onsubmit', 'onanimationstart'],
+    ALLOW_DATA_ATTR: false
+  })
+})
 
 const replyLabel = computed(() => {
   switch (replyMode.value) {
@@ -290,8 +296,14 @@ const replyLabel = computed(() => {
 <template>
   <div class="h-full flex flex-col">
     <!-- Loading (only show full spinner if we have no data at all) -->
-    <div v-if="loadingMessage && !currentMessage" class="flex items-center justify-center flex-1">
-      <UIcon name="i-lucide-loader-2" class="animate-spin text-3xl text-primary" />
+    <div
+      v-if="loadingMessage && !currentMessage"
+      class="flex items-center justify-center flex-1"
+    >
+      <UIcon
+        name="i-lucide-loader-2"
+        class="animate-spin text-3xl text-primary"
+      />
     </div>
 
     <template v-else-if="currentMessage">
@@ -363,8 +375,13 @@ const replyLabel = computed(() => {
         <div class="max-w-4xl mx-auto px-4 sm:px-6 py-4">
           <!-- Subject -->
           <div class="flex items-start gap-2 mb-4">
-            <h1 class="text-xl sm:text-2xl font-normal flex-1">{{ currentMessage.subject }}</h1>
-            <button class="mt-1 shrink-0" @click="handleStarToggle">
+            <h1 class="text-xl sm:text-2xl font-normal flex-1">
+              {{ currentMessage.subject }}
+            </h1>
+            <button
+              class="mt-1 shrink-0"
+              @click="handleStarToggle"
+            >
               <UIcon
                 name="i-lucide-star"
                 class="text-lg transition-colors"
@@ -395,27 +412,41 @@ const replyLabel = computed(() => {
                 @click="showDetails = !showDetails"
               >
                 to {{ currentMessage.to?.map(a => a.name || a.address).join(', ') }}
-                <UIcon :name="showDetails ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'" class="text-[10px] ml-0.5" />
+                <UIcon
+                  :name="showDetails ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'"
+                  class="text-[10px] ml-0.5"
+                />
               </button>
 
               <!-- Expanded details -->
-              <div v-if="showDetails" class="mt-2 text-xs text-muted space-y-1 bg-elevated rounded-lg p-3">
+              <div
+                v-if="showDetails"
+                class="mt-2 text-xs text-muted space-y-1 bg-elevated rounded-lg p-3"
+              >
                 <div><span class="font-medium">From:</span> {{ currentMessage.from.map(formatAddress).join(', ') }}</div>
                 <div><span class="font-medium">To:</span> {{ currentMessage.to?.map(formatAddress).join(', ') }}</div>
-                <div v-if="currentMessage.cc?.length"><span class="font-medium">Cc:</span> {{ currentMessage.cc.map(formatAddress).join(', ') }}</div>
+                <div v-if="currentMessage.cc?.length">
+                  <span class="font-medium">Cc:</span> {{ currentMessage.cc.map(formatAddress).join(', ') }}
+                </div>
                 <div><span class="font-medium">Date:</span> {{ formatFullDate(currentMessage.date) }}</div>
               </div>
             </div>
           </div>
 
           <!-- Attachments -->
-          <div v-if="currentMessage.attachments?.length" class="flex flex-wrap gap-2 mb-4">
+          <div
+            v-if="currentMessage.attachments?.length"
+            class="flex flex-wrap gap-2 mb-4"
+          >
             <div
               v-for="att in currentMessage.attachments"
               :key="att.filename"
               class="flex items-center gap-2 px-3 py-2 bg-elevated rounded-lg border border-default"
             >
-              <UIcon :name="getAttachmentIcon(att.contentType)" class="text-muted text-sm shrink-0" />
+              <UIcon
+                :name="getAttachmentIcon(att.contentType)"
+                class="text-muted text-sm shrink-0"
+              />
               <a
                 :href="`/api/mail/attachment?uid=${uid}&folder=${encodeURIComponent(folder)}&filename=${encodeURIComponent(att.filename)}&mode=view`"
                 target="_blank"
@@ -430,27 +461,43 @@ const replyLabel = computed(() => {
                 class="text-muted hover:text-highlighted transition-colors cursor-pointer ml-1 shrink-0"
                 title="Download"
               >
-                <UIcon name="i-lucide-download" class="text-sm" />
+                <UIcon
+                  name="i-lucide-download"
+                  class="text-sm"
+                />
               </a>
             </div>
           </div>
 
           <!-- Email Body -->
           <div class="border-t border-default pt-4">
-            <div v-if="!currentMessage.html && !currentMessage.text && loadingMessage" class="flex items-center gap-2 py-8 justify-center">
-              <UIcon name="i-lucide-loader-2" class="animate-spin text-lg text-primary" />
+            <div
+              v-if="!currentMessage.html && !currentMessage.text && loadingMessage"
+              class="flex items-center gap-2 py-8 justify-center"
+            >
+              <UIcon
+                name="i-lucide-loader-2"
+                class="animate-spin text-lg text-primary"
+              />
               <span class="text-sm text-muted">Loading message...</span>
             </div>
             <div
               v-else-if="currentMessage.html"
               class="prose prose-sm max-w-none dark:prose-invert"
-              v-html="currentMessage.html"
+              v-html="sanitizedHtml"
             />
-            <pre v-else-if="currentMessage.text" class="whitespace-pre-wrap text-sm font-sans">{{ currentMessage.text }}</pre>
+            <pre
+              v-else-if="currentMessage.text"
+              class="whitespace-pre-wrap text-sm font-sans"
+            >{{ currentMessage.text }}</pre>
           </div>
 
           <!-- Inline Reply Compose -->
-          <div v-if="replyMode !== 'none'" ref="replyContainerRef" class="mt-6 border border-default rounded-xl overflow-hidden">
+          <div
+            v-if="replyMode !== 'none'"
+            ref="replyContainerRef"
+            class="mt-6 border border-default rounded-xl overflow-hidden"
+          >
             <!-- Reply header -->
             <div class="flex items-center gap-2 px-4 py-2.5 bg-elevated border-b border-default">
               <UIcon
@@ -459,8 +506,14 @@ const replyLabel = computed(() => {
               />
               <span class="text-sm font-medium">{{ replyLabel }}</span>
               <div class="flex-1" />
-              <button class="text-muted hover:text-highlighted" @click="closeReply">
-                <UIcon name="i-lucide-x" class="text-sm" />
+              <button
+                class="text-muted hover:text-highlighted"
+                @click="closeReply"
+              >
+                <UIcon
+                  name="i-lucide-x"
+                  class="text-sm"
+                />
               </button>
             </div>
 
@@ -492,27 +545,45 @@ const replyLabel = computed(() => {
                 </div>
               </div>
 
-              <div v-if="showReplyCc" class="flex items-center gap-2 px-4 py-1.5 border-b border-default">
+              <div
+                v-if="showReplyCc"
+                class="flex items-center gap-2 px-4 py-1.5 border-b border-default"
+              >
                 <span class="text-xs text-muted w-10 shrink-0">Cc</span>
                 <input
                   v-model="replyCc"
                   type="text"
                   class="flex-1 bg-transparent text-sm outline-none"
                 >
-                <button class="text-muted hover:text-highlighted" @click="showReplyCc = false; replyCc = ''">
-                  <UIcon name="i-lucide-x" class="text-xs" />
+                <button
+                  class="text-muted hover:text-highlighted"
+                  @click="showReplyCc = false; replyCc = ''"
+                >
+                  <UIcon
+                    name="i-lucide-x"
+                    class="text-xs"
+                  />
                 </button>
               </div>
 
-              <div v-if="showReplyBcc" class="flex items-center gap-2 px-4 py-1.5 border-b border-default">
+              <div
+                v-if="showReplyBcc"
+                class="flex items-center gap-2 px-4 py-1.5 border-b border-default"
+              >
                 <span class="text-xs text-muted w-10 shrink-0">Bcc</span>
                 <input
                   v-model="replyBcc"
                   type="text"
                   class="flex-1 bg-transparent text-sm outline-none"
                 >
-                <button class="text-muted hover:text-highlighted" @click="showReplyBcc = false; replyBcc = ''">
-                  <UIcon name="i-lucide-x" class="text-xs" />
+                <button
+                  class="text-muted hover:text-highlighted"
+                  @click="showReplyBcc = false; replyBcc = ''"
+                >
+                  <UIcon
+                    name="i-lucide-x"
+                    class="text-xs"
+                  />
                 </button>
               </div>
             </div>
@@ -542,21 +613,30 @@ const replyLabel = computed(() => {
                   class="w-7 h-7 flex items-center justify-center rounded-full hover:bg-elevated text-muted hover:text-highlighted transition-colors"
                   title="Attach files"
                 >
-                  <UIcon name="i-lucide-paperclip" class="text-sm" />
+                  <UIcon
+                    name="i-lucide-paperclip"
+                    class="text-sm"
+                  />
                 </button>
                 <button
                   type="button"
                   class="w-7 h-7 flex items-center justify-center rounded-full hover:bg-elevated text-muted hover:text-highlighted transition-colors"
                   title="Insert link"
                 >
-                  <UIcon name="i-lucide-link" class="text-sm" />
+                  <UIcon
+                    name="i-lucide-link"
+                    class="text-sm"
+                  />
                 </button>
                 <button
                   type="button"
                   class="w-7 h-7 flex items-center justify-center rounded-full hover:bg-elevated text-muted hover:text-highlighted transition-colors"
                   title="Insert emoji"
                 >
-                  <UIcon name="i-lucide-smile" class="text-sm" />
+                  <UIcon
+                    name="i-lucide-smile"
+                    class="text-sm"
+                  />
                 </button>
               </div>
 
@@ -568,13 +648,19 @@ const replyLabel = computed(() => {
                 title="Discard"
                 @click="closeReply"
               >
-                <UIcon name="i-lucide-trash-2" class="text-sm" />
+                <UIcon
+                  name="i-lucide-trash-2"
+                  class="text-sm"
+                />
               </button>
             </div>
           </div>
 
           <!-- Reply/Forward buttons (shown when no inline reply is open) -->
-          <div v-else class="mt-6 border border-default rounded-xl p-4">
+          <div
+            v-else
+            class="mt-6 border border-default rounded-xl p-4"
+          >
             <div class="flex gap-2">
               <UButton
                 icon="i-lucide-reply"

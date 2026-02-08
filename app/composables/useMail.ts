@@ -190,6 +190,10 @@ export function useMail() {
       sessionStorage.removeItem(SESSION_CACHE_KEY)
       sessionStorage.removeItem(SESSION_FOLDERS_KEY)
       sessionStorage.removeItem(SESSION_STATE_KEY)
+      sessionStorage.removeItem('hourinbox_starred_cache')
+      sessionStorage.removeItem('hourinbox_last_route')
+      localStorage.removeItem('hourinbox_compose_draft')
+      localStorage.removeItem('hourinbox_recent_searches')
     }
   }
 

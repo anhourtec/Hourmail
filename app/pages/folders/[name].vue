@@ -92,10 +92,10 @@ async function handleCheckboxClick(e: Event, uid: number) {
   toggleSelect(uid)
 }
 
-async function handleDraftClick(msg: { uid: number; flags: string[] }) {
+async function handleDraftClick(msg: { uid: number, flags: string[] }) {
   loadingDraft.value = true
   try {
-    const draft = await $fetch<{ to: string; cc: string; bcc: string; subject: string; html: string }>('/api/mail/draft', {
+    const draft = await $fetch<{ to: string, cc: string, bcc: string, subject: string, html: string }>('/api/mail/draft', {
       query: { uid: msg.uid, folder: folderPath.value }
     })
     openCompose({
@@ -151,7 +151,9 @@ const allSelected = computed(() =>
         />
       </button>
 
-      <h2 class="text-sm font-semibold ml-1">{{ folderDisplayName(folderPath) }}</h2>
+      <h2 class="text-sm font-semibold ml-1">
+        {{ folderDisplayName(folderPath) }}
+      </h2>
 
       <UButton
         v-if="isDraftsFolder && selectedMessages.size > 0"
@@ -167,7 +169,10 @@ const allSelected = computed(() =>
 
       <div class="flex-1" />
 
-      <span v-if="totalMessages > 0" class="text-xs text-muted hidden sm:inline">
+      <span
+        v-if="totalMessages > 0"
+        class="text-xs text-muted hidden sm:inline"
+      >
         {{ (page - 1) * 50 + 1 }}&ndash;{{ Math.min(page * 50, totalMessages) }} of {{ totalMessages }}
       </span>
 
@@ -199,32 +204,61 @@ const allSelected = computed(() =>
     </div>
 
     <!-- Loading -->
-    <div v-if="loadingMessages && messages.length === 0" class="flex items-center justify-center flex-1">
+    <div
+      v-if="loadingMessages && messages.length === 0"
+      class="flex items-center justify-center flex-1"
+    >
       <div class="text-center">
-        <UIcon name="i-lucide-loader-2" class="animate-spin text-3xl text-primary mb-2" />
-        <p class="text-muted text-sm">Loading messages...</p>
+        <UIcon
+          name="i-lucide-loader-2"
+          class="animate-spin text-3xl text-primary mb-2"
+        />
+        <p class="text-muted text-sm">
+          Loading messages...
+        </p>
       </div>
     </div>
 
     <!-- Empty -->
-    <div v-else-if="messages.length === 0" class="flex items-center justify-center flex-1">
+    <div
+      v-else-if="messages.length === 0"
+      class="flex items-center justify-center flex-1"
+    >
       <div class="text-center">
-        <UIcon name="i-lucide-folder-open" class="text-5xl text-muted mb-3" />
-        <h3 class="text-lg font-medium mb-1">No messages</h3>
-        <p class="text-muted text-sm">This folder is empty</p>
+        <UIcon
+          name="i-lucide-folder-open"
+          class="text-5xl text-muted mb-3"
+        />
+        <h3 class="text-lg font-medium mb-1">
+          No messages
+        </h3>
+        <p class="text-muted text-sm">
+          This folder is empty
+        </p>
       </div>
     </div>
 
     <!-- Loading draft overlay -->
-    <div v-if="loadingDraft" class="flex items-center justify-center flex-1">
+    <div
+      v-if="loadingDraft"
+      class="flex items-center justify-center flex-1"
+    >
       <div class="text-center">
-        <UIcon name="i-lucide-loader-2" class="animate-spin text-3xl text-primary mb-2" />
-        <p class="text-muted text-sm">Opening draft...</p>
+        <UIcon
+          name="i-lucide-loader-2"
+          class="animate-spin text-3xl text-primary mb-2"
+        />
+        <p class="text-muted text-sm">
+          Opening draft...
+        </p>
       </div>
     </div>
 
     <!-- Message List -->
-    <div v-else class="flex-1 overflow-y-auto">
+    <div
+      v-else
+      class="flex-1 overflow-y-auto"
+    >
       <div
         v-for="msg in messages"
         :key="msg.uid"
@@ -317,7 +351,10 @@ const allSelected = computed(() =>
           title="Delete draft"
           @click="handleDeleteDraft($event, msg.uid)"
         >
-          <UIcon name="i-lucide-x" class="text-sm" />
+          <UIcon
+            name="i-lucide-x"
+            class="text-sm"
+          />
         </button>
       </div>
     </div>

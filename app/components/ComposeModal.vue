@@ -19,7 +19,7 @@ const attachments = ref<File[]>([])
 
 // Autocomplete state
 const autocompleteField = ref<'to' | 'cc' | 'bcc' | null>(null)
-const autocompleteResults = ref<{ name: string; address: string }[]>([])
+const autocompleteResults = ref<{ name: string, address: string }[]>([])
 const autocompleteIndex = ref(-1)
 
 watch(composeState, (state) => {
@@ -62,7 +62,7 @@ function handleAddressInput(field: 'to' | 'cc' | 'bcc') {
   }
 }
 
-function selectContact(contact: { name: string; address: string }) {
+function selectContact(contact: { name: string, address: string }) {
   const field = autocompleteField.value
   if (!field) return
 
@@ -90,7 +90,7 @@ function selectContact(contact: { name: string; address: string }) {
   })
 }
 
-function handleAddressKeydown(e: KeyboardEvent, field: 'to' | 'cc' | 'bcc') {
+function handleAddressKeydown(e: KeyboardEvent, _field: 'to' | 'cc' | 'bcc') {
   if (autocompleteResults.value.length === 0) return
 
   if (e.key === 'ArrowDown') {
@@ -244,7 +244,10 @@ const headerLabel = computed(() => {
             title="Minimize"
             @click.stop="toggleMinimize"
           >
-            <UIcon name="i-lucide-minus" class="text-sm" />
+            <UIcon
+              name="i-lucide-minus"
+              class="text-sm"
+            />
           </button>
           <!-- Maximize / Restore -->
           <button
@@ -264,7 +267,10 @@ const headerLabel = computed(() => {
             title="Close"
             @click.stop="closeCompose"
           >
-            <UIcon name="i-lucide-x" class="text-sm" />
+            <UIcon
+              name="i-lucide-x"
+              class="text-sm"
+            />
           </button>
         </div>
       </div>
@@ -323,17 +329,30 @@ const headerLabel = computed(() => {
                 :class="i === autocompleteIndex ? 'bg-default' : ''"
                 @mousedown.prevent="selectContact(contact)"
               >
-                <UAvatar :alt="contact.name || contact.address" size="2xs" />
+                <UAvatar
+                  :alt="contact.name || contact.address"
+                  size="2xs"
+                />
                 <div class="min-w-0 flex-1">
-                  <p v-if="contact.name" class="font-medium truncate text-sm">{{ contact.name }}</p>
-                  <p class="text-xs text-muted truncate">{{ contact.address }}</p>
+                  <p
+                    v-if="contact.name"
+                    class="font-medium truncate text-sm"
+                  >
+                    {{ contact.name }}
+                  </p>
+                  <p class="text-xs text-muted truncate">
+                    {{ contact.address }}
+                  </p>
                 </div>
               </button>
             </div>
           </div>
 
           <!-- Cc -->
-          <div v-if="showCc" class="relative">
+          <div
+            v-if="showCc"
+            class="relative"
+          >
             <div class="flex items-center gap-2 px-4 py-1.5 border-b border-default">
               <span class="text-xs text-muted w-12 shrink-0">Cc</span>
               <input
@@ -345,8 +364,14 @@ const headerLabel = computed(() => {
                 @keydown="handleAddressKeydown($event, 'cc')"
                 @blur="handleAddressBlur"
               >
-              <button class="text-muted hover:text-highlighted" @click="showCc = false; composeData.cc = ''">
-                <UIcon name="i-lucide-x" class="text-xs" />
+              <button
+                class="text-muted hover:text-highlighted"
+                @click="showCc = false; composeData.cc = ''"
+              >
+                <UIcon
+                  name="i-lucide-x"
+                  class="text-xs"
+                />
               </button>
             </div>
 
@@ -362,17 +387,30 @@ const headerLabel = computed(() => {
                 :class="i === autocompleteIndex ? 'bg-default' : ''"
                 @mousedown.prevent="selectContact(contact)"
               >
-                <UAvatar :alt="contact.name || contact.address" size="2xs" />
+                <UAvatar
+                  :alt="contact.name || contact.address"
+                  size="2xs"
+                />
                 <div class="min-w-0 flex-1">
-                  <p v-if="contact.name" class="font-medium truncate text-sm">{{ contact.name }}</p>
-                  <p class="text-xs text-muted truncate">{{ contact.address }}</p>
+                  <p
+                    v-if="contact.name"
+                    class="font-medium truncate text-sm"
+                  >
+                    {{ contact.name }}
+                  </p>
+                  <p class="text-xs text-muted truncate">
+                    {{ contact.address }}
+                  </p>
                 </div>
               </button>
             </div>
           </div>
 
           <!-- Bcc -->
-          <div v-if="showBcc" class="relative">
+          <div
+            v-if="showBcc"
+            class="relative"
+          >
             <div class="flex items-center gap-2 px-4 py-1.5 border-b border-default">
               <span class="text-xs text-muted w-12 shrink-0">Bcc</span>
               <input
@@ -384,8 +422,14 @@ const headerLabel = computed(() => {
                 @keydown="handleAddressKeydown($event, 'bcc')"
                 @blur="handleAddressBlur"
               >
-              <button class="text-muted hover:text-highlighted" @click="showBcc = false; composeData.bcc = ''">
-                <UIcon name="i-lucide-x" class="text-xs" />
+              <button
+                class="text-muted hover:text-highlighted"
+                @click="showBcc = false; composeData.bcc = ''"
+              >
+                <UIcon
+                  name="i-lucide-x"
+                  class="text-xs"
+                />
               </button>
             </div>
 
@@ -401,10 +445,20 @@ const headerLabel = computed(() => {
                 :class="i === autocompleteIndex ? 'bg-default' : ''"
                 @mousedown.prevent="selectContact(contact)"
               >
-                <UAvatar :alt="contact.name || contact.address" size="2xs" />
+                <UAvatar
+                  :alt="contact.name || contact.address"
+                  size="2xs"
+                />
                 <div class="min-w-0 flex-1">
-                  <p v-if="contact.name" class="font-medium truncate text-sm">{{ contact.name }}</p>
-                  <p class="text-xs text-muted truncate">{{ contact.address }}</p>
+                  <p
+                    v-if="contact.name"
+                    class="font-medium truncate text-sm"
+                  >
+                    {{ contact.name }}
+                  </p>
+                  <p class="text-xs text-muted truncate">
+                    {{ contact.address }}
+                  </p>
                 </div>
               </button>
             </div>
@@ -434,20 +488,29 @@ const headerLabel = computed(() => {
         </div>
 
         <!-- Attachments list -->
-        <div v-if="attachments.length > 0" class="px-4 py-2 border-t border-default shrink-0 space-y-1.5 max-h-24 overflow-y-auto">
+        <div
+          v-if="attachments.length > 0"
+          class="px-4 py-2 border-t border-default shrink-0 space-y-1.5 max-h-24 overflow-y-auto"
+        >
           <div
             v-for="(file, i) in attachments"
             :key="i"
             class="flex items-center gap-2 bg-elevated rounded-md px-2.5 py-1.5"
           >
-            <UIcon name="i-lucide-file" class="text-muted text-sm shrink-0" />
+            <UIcon
+              name="i-lucide-file"
+              class="text-muted text-sm shrink-0"
+            />
             <span class="text-xs truncate flex-1">{{ file.name }}</span>
             <span class="text-[10px] text-muted shrink-0">{{ formatFileSize(file.size) }}</span>
             <button
               class="text-muted hover:text-highlighted shrink-0"
               @click="removeAttachment(i)"
             >
-              <UIcon name="i-lucide-x" class="text-xs" />
+              <UIcon
+                name="i-lucide-x"
+                class="text-xs"
+              />
             </button>
           </div>
         </div>
@@ -479,7 +542,10 @@ const headerLabel = computed(() => {
               title="Attach files"
               @click="handleAttachClick"
             >
-              <UIcon name="i-lucide-paperclip" class="text-sm" />
+              <UIcon
+                name="i-lucide-paperclip"
+                class="text-sm"
+              />
             </button>
             <button
               type="button"
@@ -488,7 +554,10 @@ const headerLabel = computed(() => {
               title="Insert emoji"
               @click="showEmojiPicker = !showEmojiPicker"
             >
-              <UIcon name="i-lucide-smile" class="text-sm" />
+              <UIcon
+                name="i-lucide-smile"
+                class="text-sm"
+              />
             </button>
 
             <!-- Emoji picker popup -->
@@ -502,7 +571,10 @@ const headerLabel = computed(() => {
 
           <div class="flex-1" />
 
-          <span v-if="draftSavedAt" class="text-[11px] text-muted mr-2">
+          <span
+            v-if="draftSavedAt"
+            class="text-[11px] text-muted mr-2"
+          >
             Draft saved
           </span>
 
@@ -512,7 +584,10 @@ const headerLabel = computed(() => {
             title="Discard"
             @click="discardCompose"
           >
-            <UIcon name="i-lucide-trash-2" class="text-sm" />
+            <UIcon
+              name="i-lucide-trash-2"
+              class="text-sm"
+            />
           </button>
         </div>
       </template>

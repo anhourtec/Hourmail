@@ -40,8 +40,8 @@ export interface MailMessage {
   seq: number
   messageId?: string
   subject: string
-  from: { name: string; address: string }[]
-  to: { name: string; address: string }[]
+  from: { name: string, address: string }[]
+  to: { name: string, address: string }[]
   date: string
   flags: string[]
   preview: string
@@ -50,8 +50,8 @@ export interface MailMessage {
 export interface MailMessageFull extends MailMessage {
   html: string
   text: string
-  cc?: { name: string; address: string }[]
-  attachments: { filename: string; size: number; contentType: string }[]
+  cc?: { name: string, address: string }[]
+  attachments: { filename: string, size: number, contentType: string }[]
 }
 
 function parseEnvelopeAddress(a: ImapEnvelopeAddress): { name: string, address: string } {
@@ -206,7 +206,7 @@ export async function listMessages(
   folder: string = 'INBOX',
   page: number = 1,
   limit: number = 50
-): Promise<{ messages: MailMessage[]; total: number }> {
+): Promise<{ messages: MailMessage[], total: number }> {
   const client = createImapClient(session, password)
   await client.connect()
 
@@ -276,7 +276,7 @@ export async function searchMessages(
   folder: string = 'INBOX',
   query: SearchQuery,
   limit: number = 50
-): Promise<{ messages: MailMessage[]; total: number }> {
+): Promise<{ messages: MailMessage[], total: number }> {
   const client = createImapClient(session, password)
   await client.connect()
 
@@ -406,7 +406,7 @@ export async function getAttachment(
   folder: string,
   uid: number,
   filename: string
-): Promise<{ content: Buffer; contentType: string; filename: string } | null> {
+): Promise<{ content: Buffer, contentType: string, filename: string } | null> {
   const client = createImapClient(session, password)
   await client.connect()
 
@@ -422,7 +422,7 @@ export async function getAttachment(
 
       const parsed: ParsedMail = await simpleParser(msg.source)
       const att = (parsed.attachments || []).find(
-        (a) => a.filename === filename
+        a => a.filename === filename
       )
       if (!att) return null
 
@@ -480,7 +480,7 @@ export async function updateMessageFlags(
   password: string,
   folder: string,
   uid: number,
-  flags: { add?: string[]; remove?: string[] }
+  flags: { add?: string[], remove?: string[] }
 ): Promise<void> {
   const client = createImapClient(session, password)
   await client.connect()
@@ -590,7 +590,7 @@ export async function getDraftContent(
   password: string,
   folder: string,
   uid: number
-): Promise<{ to: string; cc: string; bcc: string; subject: string; html: string } | null> {
+): Promise<{ to: string, cc: string, bcc: string, subject: string, html: string } | null> {
   const client = createImapClient(session, password)
   await client.connect()
 
@@ -640,7 +640,7 @@ export async function appendDraft(
   password: string,
   rawMessage: string | Buffer,
   replaceUid?: number
-): Promise<{ uid: number; folder: string }> {
+): Promise<{ uid: number, folder: string }> {
   const client = createImapClient(session, password)
   await client.connect()
 

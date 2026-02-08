@@ -162,10 +162,10 @@ export async function destroySession(event: H3Event): Promise<void> {
 
 // --- Multi-account helpers ---
 
-export async function getAllAccounts(event: H3Event): Promise<{ email: string; organization?: string; domain?: string; active: boolean }[]> {
+export async function getAllAccounts(event: H3Event): Promise<{ email: string, organization?: string, domain?: string, active: boolean }[]> {
   const tokens = getAccountTokens(event)
   const activeToken = getCookie(event, SESSION_COOKIE)
-  const accounts: { email: string; organization?: string; domain?: string; active: boolean }[] = []
+  const accounts: { email: string, organization?: string, domain?: string, active: boolean }[] = []
 
   for (const token of tokens) {
     const data = await redis.get(`session:${token}`)

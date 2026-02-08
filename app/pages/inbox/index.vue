@@ -135,7 +135,10 @@ const allSelected = computed(() =>
 
       <div class="flex-1" />
 
-      <span v-if="totalMessages > 0" class="text-xs text-muted hidden sm:inline">
+      <span
+        v-if="totalMessages > 0"
+        class="text-xs text-muted hidden sm:inline"
+      >
         {{ (page - 1) * 50 + 1 }}&ndash;{{ Math.min(page * 50, totalMessages) }} of {{ totalMessages }}
       </span>
 
@@ -167,24 +170,45 @@ const allSelected = computed(() =>
     </div>
 
     <!-- Loading -->
-    <div v-if="loadingMessages && messages.length === 0" class="flex items-center justify-center flex-1">
+    <div
+      v-if="loadingMessages && messages.length === 0"
+      class="flex items-center justify-center flex-1"
+    >
       <div class="text-center">
-        <UIcon name="i-lucide-loader-2" class="animate-spin text-3xl text-primary mb-2" />
-        <p class="text-muted text-sm">Loading messages...</p>
+        <UIcon
+          name="i-lucide-loader-2"
+          class="animate-spin text-3xl text-primary mb-2"
+        />
+        <p class="text-muted text-sm">
+          Loading messages...
+        </p>
       </div>
     </div>
 
     <!-- Empty State -->
-    <div v-else-if="messages.length === 0" class="flex items-center justify-center flex-1">
+    <div
+      v-else-if="messages.length === 0"
+      class="flex items-center justify-center flex-1"
+    >
       <div class="text-center">
-        <UIcon name="i-lucide-inbox" class="text-5xl text-muted mb-3" />
-        <h3 class="text-lg font-medium mb-1">Your inbox is empty</h3>
-        <p class="text-muted text-sm">No messages to display</p>
+        <UIcon
+          name="i-lucide-inbox"
+          class="text-5xl text-muted mb-3"
+        />
+        <h3 class="text-lg font-medium mb-1">
+          Your inbox is empty
+        </h3>
+        <p class="text-muted text-sm">
+          No messages to display
+        </p>
       </div>
     </div>
 
     <!-- Message List -->
-    <div v-else class="flex-1 overflow-y-auto">
+    <div
+      v-else
+      class="flex-1 overflow-y-auto"
+    >
       <div
         v-for="msg in messages"
         :key="msg.uid"
@@ -238,7 +262,10 @@ const allSelected = computed(() =>
             >
               {{ msg.subject || '(no subject)' }}
             </span>
-            <span v-if="msg.preview" class="truncate text-xs text-muted hidden md:inline">
+            <span
+              v-if="msg.preview"
+              class="truncate text-xs text-muted hidden md:inline"
+            >
               — {{ msg.preview }}
             </span>
           </div>

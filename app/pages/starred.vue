@@ -1,10 +1,10 @@
 <script setup lang="ts">
 definePageMeta({ layout: 'mail', middleware: 'auth' })
 
-const { messages, totalMessages, loadingMessages, selectedMessages, toggleSelect, selectAll, clearSelection, toggleStarred, deleteEmail } = useMail()
+const { messages, totalMessages, selectedMessages, toggleSelect, selectAll, toggleStarred } = useMail()
 const loading = ref(false)
 
-type StarredResult = { messages: { uid: number; seq: number; messageId?: string; subject: string; from: { name: string; address: string }[]; to: { name: string; address: string }[]; date: string; flags: string[]; preview: string }[]; total: number }
+type StarredResult = { messages: { uid: number, seq: number, messageId?: string, subject: string, from: { name: string, address: string }[], to: { name: string, address: string }[], date: string, flags: string[], preview: string }[], total: number }
 
 const STARRED_CACHE_KEY = 'hourinbox_starred_cache'
 
@@ -26,10 +26,6 @@ function setCachedStarred(data: StarredResult) {
   try {
     sessionStorage.setItem(STARRED_CACHE_KEY, JSON.stringify({ ...data, _ts: Date.now() }))
   } catch { /* ignore */ }
-}
-
-function clearStarredCache() {
-  try { sessionStorage.removeItem(STARRED_CACHE_KEY) } catch { /* ignore */ }
 }
 
 async function fetchStarred() {
@@ -146,12 +142,20 @@ const allSelected = computed(() =>
         />
       </button>
 
-      <UIcon name="i-lucide-star" class="text-yellow-500 text-base ml-1" />
-      <h2 class="text-sm font-semibold ml-1">Starred</h2>
+      <UIcon
+        name="i-lucide-star"
+        class="text-yellow-500 text-base ml-1"
+      />
+      <h2 class="text-sm font-semibold ml-1">
+        Starred
+      </h2>
 
       <div class="flex-1" />
 
-      <span v-if="totalMessages > 0" class="text-xs text-muted hidden sm:inline">
+      <span
+        v-if="totalMessages > 0"
+        class="text-xs text-muted hidden sm:inline"
+      >
         {{ totalMessages }} starred
       </span>
 
@@ -166,24 +170,45 @@ const allSelected = computed(() =>
     </div>
 
     <!-- Loading -->
-    <div v-if="loading && messages.length === 0" class="flex items-center justify-center flex-1">
+    <div
+      v-if="loading && messages.length === 0"
+      class="flex items-center justify-center flex-1"
+    >
       <div class="text-center">
-        <UIcon name="i-lucide-loader-2" class="animate-spin text-3xl text-primary mb-2" />
-        <p class="text-muted text-sm">Loading starred messages...</p>
+        <UIcon
+          name="i-lucide-loader-2"
+          class="animate-spin text-3xl text-primary mb-2"
+        />
+        <p class="text-muted text-sm">
+          Loading starred messages...
+        </p>
       </div>
     </div>
 
     <!-- Empty -->
-    <div v-else-if="messages.length === 0" class="flex items-center justify-center flex-1">
+    <div
+      v-else-if="messages.length === 0"
+      class="flex items-center justify-center flex-1"
+    >
       <div class="text-center">
-        <UIcon name="i-lucide-star" class="text-5xl text-muted mb-3" />
-        <h3 class="text-lg font-medium mb-1">No starred messages</h3>
-        <p class="text-muted text-sm">Star important emails to find them here</p>
+        <UIcon
+          name="i-lucide-star"
+          class="text-5xl text-muted mb-3"
+        />
+        <h3 class="text-lg font-medium mb-1">
+          No starred messages
+        </h3>
+        <p class="text-muted text-sm">
+          Star important emails to find them here
+        </p>
       </div>
     </div>
 
     <!-- Message List -->
-    <div v-else class="flex-1 overflow-y-auto">
+    <div
+      v-else
+      class="flex-1 overflow-y-auto"
+    >
       <div
         v-for="msg in messages"
         :key="msg.uid"

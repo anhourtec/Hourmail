@@ -23,7 +23,7 @@ const composeData = reactive<ComposeData>({
 const draftSavedAt = ref<Date | null>(null)
 
 // Track source draft for deletion after sending
-const draftSource = reactive<{ uid: number; folder: string } | { uid: 0; folder: '' }>({ uid: 0, folder: '' })
+const draftSource = reactive<{ uid: number, folder: string } | { uid: 0, folder: '' }>({ uid: 0, folder: '' })
 
 // Track the server-side draft UID for replace-on-save
 const serverDraftUid = ref(0)
@@ -97,7 +97,7 @@ function saveDraftToServerQuiet() {
   if (!hasDraftContent()) return
   serverSaveInFlight = true
 
-  $fetch<{ success: boolean; uid: number; folder: string }>('/api/mail/draft', {
+  $fetch<{ success: boolean, uid: number, folder: string }>('/api/mail/draft', {
     method: 'POST',
     body: {
       to: composeData.to || undefined,
@@ -127,7 +127,7 @@ function saveDraftToServerQuiet() {
 }
 
 export function useCompose() {
-  function openCompose(data?: Partial<ComposeData>, source?: { uid: number; folder: string }) {
+  function openCompose(data?: Partial<ComposeData>, source?: { uid: number, folder: string }) {
     if (data && (data.to || data.subject || data.body)) {
       // Opening with specific data (reply, forward, draft edit, etc.)
       composeData.to = data.to || ''
@@ -167,7 +167,7 @@ export function useCompose() {
     if (!import.meta.client) return
     if (!hasDraftContent()) return
     try {
-      const res = await $fetch<{ success: boolean; uid: number; folder: string }>('/api/mail/draft', {
+      const res = await $fetch<{ success: boolean, uid: number, folder: string }>('/api/mail/draft', {
         method: 'POST',
         body: {
           to: composeData.to || undefined,

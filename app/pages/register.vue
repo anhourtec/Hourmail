@@ -70,7 +70,13 @@ async function handleRegister() {
   <div class="min-h-screen flex bg-default relative">
     <!-- Top bar -->
     <div class="absolute top-5 left-5 z-10">
-      <UButton to="/login" label="Sign In" icon="i-lucide-arrow-left" variant="ghost" size="sm" />
+      <UButton
+        to="/login"
+        label="Sign In"
+        icon="i-lucide-arrow-left"
+        variant="ghost"
+        size="sm"
+      />
     </div>
     <div class="absolute top-5 right-5 z-10">
       <UColorModeButton />
@@ -78,37 +84,60 @@ async function handleRegister() {
 
     <!-- Left panel — form -->
     <div class="flex-1 flex flex-col items-center justify-center px-6 py-8 overflow-y-auto">
-
       <div class="w-full max-w-md">
         <!-- Mobile logo -->
         <div class="lg:hidden text-center mb-6">
           <div class="flex items-center justify-center gap-0.5 mb-2">
-            <img :src="brand.logo" :alt="brand.name" class="w-14 h-14" />
+            <img
+              :src="brand.logo"
+              :alt="brand.name"
+              class="w-14 h-14"
+            >
             <span class="text-xl font-bold tracking-tight">{{ brand.name }}</span>
           </div>
         </div>
 
         <!-- Success State -->
-        <div v-if="success" class="text-center py-8">
-          <UIcon name="i-lucide-check-circle-2" class="text-green-500 text-5xl mb-4" />
-          <h2 class="text-xl font-semibold mb-2">Organization Registered!</h2>
+        <div
+          v-if="success"
+          class="text-center py-8"
+        >
+          <UIcon
+            name="i-lucide-check-circle-2"
+            class="text-green-500 text-5xl mb-4"
+          />
+          <h2 class="text-xl font-semibold mb-2">
+            Organization Registered!
+          </h2>
           <p class="text-muted mb-2">
             Users with <strong>@{{ domain }}</strong> email addresses can now sign in.
           </p>
           <p class="text-xs text-muted mb-6">
             IMAP and SMTP connections verified successfully.
           </p>
-          <UButton to="/login" label="Go to Login" icon="i-lucide-log-in" size="lg" />
+          <UButton
+            to="/login"
+            label="Go to Login"
+            icon="i-lucide-log-in"
+            size="lg"
+          />
         </div>
 
         <!-- Registration Form -->
         <template v-else>
           <div class="mb-5">
-            <h1 class="text-xl font-bold tracking-tight">Register your domain</h1>
-            <p class="text-muted text-sm mt-1">Configure your organization's mail server</p>
+            <h1 class="text-xl font-bold tracking-tight">
+              Register your domain
+            </h1>
+            <p class="text-muted text-sm mt-1">
+              Configure your organization's mail server
+            </p>
           </div>
 
-          <form @submit.prevent="handleRegister" class="space-y-3.5">
+          <form
+            class="space-y-3.5"
+            @submit.prevent="handleRegister"
+          >
             <UAlert
               v-if="error"
               color="error"
@@ -118,9 +147,14 @@ async function handleRegister() {
 
             <!-- Organization section -->
             <div class="space-y-3">
-              <h2 class="text-xs font-semibold uppercase tracking-wide text-muted">Organization</h2>
+              <h2 class="text-xs font-semibold uppercase tracking-wide text-muted">
+                Organization
+              </h2>
 
-              <UFormField label="Organization Name" required>
+              <UFormField
+                label="Organization Name"
+                required
+              >
                 <UInput
                   v-model="name"
                   placeholder="Anhourtec"
@@ -132,7 +166,11 @@ async function handleRegister() {
                 />
               </UFormField>
 
-              <UFormField label="Email Domain" required hint="e.g. anhourtec.com">
+              <UFormField
+                label="Email Domain"
+                required
+                hint="e.g. anhourtec.com"
+              >
                 <UInput
                   v-model="domain"
                   placeholder="anhourtec.com"
@@ -148,10 +186,16 @@ async function handleRegister() {
 
             <!-- IMAP section -->
             <div class="space-y-3">
-              <h2 class="text-xs font-semibold uppercase tracking-wide text-muted">IMAP — Incoming Mail</h2>
+              <h2 class="text-xs font-semibold uppercase tracking-wide text-muted">
+                IMAP — Incoming Mail
+              </h2>
 
               <div class="grid grid-cols-3 gap-3">
-                <UFormField label="Host" required class="col-span-2">
+                <UFormField
+                  label="Host"
+                  required
+                  class="col-span-2"
+                >
                   <UInput
                     v-model="imapHost"
                     placeholder="imap.gmail.com"
@@ -175,10 +219,16 @@ async function handleRegister() {
 
             <!-- SMTP section -->
             <div class="space-y-3">
-              <h2 class="text-xs font-semibold uppercase tracking-wide text-muted">SMTP — Outgoing Mail</h2>
+              <h2 class="text-xs font-semibold uppercase tracking-wide text-muted">
+                SMTP — Outgoing Mail
+              </h2>
 
               <div class="grid grid-cols-3 gap-3">
-                <UFormField label="Host" required class="col-span-2">
+                <UFormField
+                  label="Host"
+                  required
+                  class="col-span-2"
+                >
                   <UInput
                     v-model="smtpHost"
                     placeholder="smtp.gmail.com"
@@ -202,28 +252,42 @@ async function handleRegister() {
 
             <!-- Security settings -->
             <div class="space-y-3">
-              <h2 class="text-xs font-semibold uppercase tracking-wide text-muted">Security</h2>
+              <h2 class="text-xs font-semibold uppercase tracking-wide text-muted">
+                Security
+              </h2>
 
               <div class="flex items-center justify-between">
                 <div>
-                  <p class="text-sm font-medium">Use SSL/TLS</p>
-                  <p class="text-xs text-muted">Ports 993 / 465 (recommended)</p>
+                  <p class="text-sm font-medium">
+                    Use SSL/TLS
+                  </p>
+                  <p class="text-xs text-muted">
+                    Ports 993 / 465 (recommended)
+                  </p>
                 </div>
                 <USwitch v-model="useSslTls" />
               </div>
 
               <div class="flex items-center justify-between">
                 <div>
-                  <p class="text-sm font-medium">Use STARTTLS</p>
-                  <p class="text-xs text-muted">Ports 143 / 587</p>
+                  <p class="text-sm font-medium">
+                    Use STARTTLS
+                  </p>
+                  <p class="text-xs text-muted">
+                    Ports 143 / 587
+                  </p>
                 </div>
                 <USwitch v-model="useStarttls" />
               </div>
 
               <div class="flex items-center justify-between">
                 <div>
-                  <p class="text-sm font-medium">Reject Invalid Certificates</p>
-                  <p class="text-xs text-muted">Disable for self-signed certs</p>
+                  <p class="text-sm font-medium">
+                    Reject Invalid Certificates
+                  </p>
+                  <p class="text-xs text-muted">
+                    Disable for self-signed certs
+                  </p>
                 </div>
                 <USwitch v-model="rejectUnauthorized" />
               </div>
@@ -241,7 +305,10 @@ async function handleRegister() {
 
           <!-- Privacy notice (mobile only) -->
           <div class="lg:hidden flex items-start gap-2 mt-4 px-1">
-            <UIcon name="i-lucide-shield-check" class="text-green-500 shrink-0 mt-0.5 text-sm" />
+            <UIcon
+              name="i-lucide-shield-check"
+              class="text-green-500 shrink-0 mt-0.5 text-sm"
+            />
             <p class="text-xs text-muted">
               Only IMAP/SMTP connection settings are stored. User passwords are never saved.
             </p>
@@ -251,7 +318,10 @@ async function handleRegister() {
 
           <p class="text-center text-sm text-muted">
             Already registered?
-            <NuxtLink to="/login" class="text-primary hover:underline font-medium">
+            <NuxtLink
+              to="/login"
+              class="text-primary hover:underline font-medium"
+            >
               Sign in
             </NuxtLink>
           </p>
@@ -268,29 +338,42 @@ async function handleRegister() {
     <div class="hidden lg:flex lg:w-5/12 flex-col justify-between p-12 bg-elevated">
       <div>
         <div class="flex items-center gap-0.5">
-          <img :src="brand.logo" :alt="brand.name" class="w-14 h-14" />
+          <img
+            :src="brand.logo"
+            :alt="brand.name"
+            class="w-14 h-14"
+          >
           <span class="text-xl font-bold tracking-tight">{{ brand.name }}</span>
         </div>
       </div>
 
       <div class="space-y-6 max-w-md">
         <h2 class="text-4xl font-bold leading-tight tracking-tight">
-          Set up your<br />organization<br />in minutes.
+          Set up your<br>organization<br>in minutes.
         </h2>
         <p class="text-muted text-lg leading-relaxed">
           Connect your mail server and let your team start using {{ brand.name }} right away.
         </p>
         <div class="space-y-3 pt-2">
           <div class="flex items-center gap-3">
-            <UIcon name="i-lucide-zap" class="text-primary text-base shrink-0" />
+            <UIcon
+              name="i-lucide-zap"
+              class="text-primary text-base shrink-0"
+            />
             <span class="text-sm text-muted">Connections tested automatically</span>
           </div>
           <div class="flex items-center gap-3">
-            <UIcon name="i-lucide-users" class="text-primary text-base shrink-0" />
+            <UIcon
+              name="i-lucide-users"
+              class="text-primary text-base shrink-0"
+            />
             <span class="text-sm text-muted">All domain users can sign in instantly</span>
           </div>
           <div class="flex items-center gap-3">
-            <UIcon name="i-lucide-shield-check" class="text-green-500 text-base shrink-0" />
+            <UIcon
+              name="i-lucide-shield-check"
+              class="text-green-500 text-base shrink-0"
+            />
             <span class="text-sm text-muted">Passwords are never stored</span>
           </div>
         </div>

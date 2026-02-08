@@ -281,15 +281,33 @@ function navigateToFolder(path: string) {
       :class="sidebarOpen ? 'w-64' : 'w-16'"
     >
       <!-- Logo -->
-      <div class="shrink-0" :class="sidebarOpen ? 'px-5 pt-5 pb-3' : 'px-3 pt-5 pb-3'">
-        <NuxtLink to="/inbox" class="flex items-center" :class="sidebarOpen ? 'gap-0.5' : 'justify-center'">
-          <img :src="brand.logo" :alt="brand.name" class="shrink-0" :class="sidebarOpen ? 'w-12 h-12' : 'w-10 h-10'" />
-          <span v-if="sidebarOpen" class="font-bold text-lg tracking-tight">{{ brand.name }}</span>
+      <div
+        class="shrink-0"
+        :class="sidebarOpen ? 'px-5 pt-5 pb-3' : 'px-3 pt-5 pb-3'"
+      >
+        <NuxtLink
+          to="/inbox"
+          class="flex items-center"
+          :class="sidebarOpen ? 'gap-0.5' : 'justify-center'"
+        >
+          <img
+            :src="brand.logo"
+            :alt="brand.name"
+            class="shrink-0"
+            :class="sidebarOpen ? 'w-12 h-12' : 'w-10 h-10'"
+          >
+          <span
+            v-if="sidebarOpen"
+            class="font-bold text-lg tracking-tight"
+          >{{ brand.name }}</span>
         </NuxtLink>
       </div>
 
       <!-- Compose -->
-      <div class="shrink-0" :class="sidebarOpen ? 'px-3 pb-3' : 'px-2 pb-3'">
+      <div
+        class="shrink-0"
+        :class="sidebarOpen ? 'px-3 pb-3' : 'px-2 pb-3'"
+      >
         <UButton
           v-if="sidebarOpen"
           icon="i-lucide-plus"
@@ -308,7 +326,10 @@ function navigateToFolder(path: string) {
       </div>
 
       <!-- Folders -->
-      <nav class="flex-1 overflow-y-auto py-1" :class="sidebarOpen ? 'px-3' : 'px-2'">
+      <nav
+        class="flex-1 overflow-y-auto py-1"
+        :class="sidebarOpen ? 'px-3' : 'px-2'"
+      >
         <!-- Starred virtual folder -->
         <button
           v-if="sidebarOpen"
@@ -320,7 +341,10 @@ function navigateToFolder(path: string) {
           "
           @click="navigateTo('/starred')"
         >
-          <UIcon name="i-lucide-star" class="text-base shrink-0" />
+          <UIcon
+            name="i-lucide-star"
+            class="text-base shrink-0"
+          />
           <span class="truncate flex-1">Starred</span>
         </button>
         <button
@@ -334,7 +358,10 @@ function navigateToFolder(path: string) {
           title="Starred"
           @click="navigateTo('/starred')"
         >
-          <UIcon name="i-lucide-star" class="text-lg shrink-0" />
+          <UIcon
+            name="i-lucide-star"
+            class="text-lg shrink-0"
+          />
         </button>
 
         <!-- Contacts -->
@@ -348,7 +375,10 @@ function navigateToFolder(path: string) {
           "
           @click="navigateTo('/contacts')"
         >
-          <UIcon name="i-lucide-contact" class="text-base shrink-0" />
+          <UIcon
+            name="i-lucide-contact"
+            class="text-base shrink-0"
+          />
           <span class="truncate flex-1">Contacts</span>
         </button>
         <button
@@ -362,17 +392,37 @@ function navigateToFolder(path: string) {
           title="Contacts"
           @click="navigateTo('/contacts')"
         >
-          <UIcon name="i-lucide-contact" class="text-lg shrink-0" />
+          <UIcon
+            name="i-lucide-contact"
+            class="text-lg shrink-0"
+          />
         </button>
 
-        <p v-if="sidebarOpen" class="text-[11px] font-semibold uppercase tracking-wider text-muted px-3 mb-2">Folders</p>
+        <p
+          v-if="sidebarOpen"
+          class="text-[11px] font-semibold uppercase tracking-wider text-muted px-3 mb-2"
+        >
+          Folders
+        </p>
 
-        <div v-if="loadingFolders" class="flex justify-center p-4">
-          <UIcon name="i-lucide-loader-2" class="animate-spin text-muted" />
+        <div
+          v-if="loadingFolders"
+          class="flex justify-center p-4"
+        >
+          <UIcon
+            name="i-lucide-loader-2"
+            class="animate-spin text-muted"
+          />
         </div>
 
-        <ul v-else class="space-y-0.5">
-          <template v-for="folder in folders" :key="folder.path">
+        <ul
+          v-else
+          class="space-y-0.5"
+        >
+          <template
+            v-for="folder in folders"
+            :key="folder.path"
+          >
             <!-- Outbox before Trash -->
             <li v-if="folder.specialUse === '\\Trash'">
               <button
@@ -385,7 +435,10 @@ function navigateToFolder(path: string) {
                 "
                 @click="navigateTo('/outbox')"
               >
-                <UIcon name="i-lucide-package" class="text-base shrink-0" />
+                <UIcon
+                  name="i-lucide-package"
+                  class="text-base shrink-0"
+                />
                 <span class="truncate flex-1">Outbox</span>
                 <span
                   v-if="outboxCount > 0"
@@ -410,7 +463,10 @@ function navigateToFolder(path: string) {
                 title="Outbox"
                 @click="navigateTo('/outbox')"
               >
-                <UIcon name="i-lucide-package" class="text-lg shrink-0" />
+                <UIcon
+                  name="i-lucide-package"
+                  class="text-lg shrink-0"
+                />
                 <span
                   v-if="outboxCount > 0"
                   class="absolute -top-0.5 -right-0.5 text-[9px] font-bold tabular-nums rounded-full min-w-4 text-center py-0 px-1 bg-primary text-white"
@@ -432,7 +488,10 @@ function navigateToFolder(path: string) {
                 "
                 @click="navigateToFolder(folder.path)"
               >
-                <UIcon :name="folderIcon(folder.specialUse)" class="text-base shrink-0" />
+                <UIcon
+                  :name="folderIcon(folder.specialUse)"
+                  class="text-base shrink-0"
+                />
                 <span class="truncate flex-1">{{ folderDisplayName(folder) }}</span>
                 <span
                   v-if="folderCount(folder) > 0"
@@ -459,7 +518,10 @@ function navigateToFolder(path: string) {
                 :title="folderDisplayName(folder)"
                 @click="navigateToFolder(folder.path)"
               >
-                <UIcon :name="folderIcon(folder.specialUse)" class="text-lg shrink-0" />
+                <UIcon
+                  :name="folderIcon(folder.specialUse)"
+                  class="text-lg shrink-0"
+                />
                 <span
                   v-if="folderCount(folder) > 0"
                   class="absolute -top-0.5 -right-0.5 text-[9px] font-bold tabular-nums rounded-full min-w-4 text-center py-0 px-1 bg-primary text-white"
@@ -473,7 +535,10 @@ function navigateToFolder(path: string) {
       </nav>
 
       <!-- User & Account Switcher -->
-      <div class="shrink-0 relative" :class="sidebarOpen ? 'px-3 mb-3' : 'px-2 pb-3'">
+      <div
+        class="shrink-0 relative"
+        :class="sidebarOpen ? 'px-3 mb-3' : 'px-2 pb-3'"
+      >
         <!-- Account menu popup -->
         <div
           v-if="showAccountMenu"
@@ -481,7 +546,9 @@ function navigateToFolder(path: string) {
           :class="sidebarOpen ? 'mx-3' : 'mx-1'"
         >
           <div class="px-3 py-2 border-b border-default">
-            <p class="text-[11px] font-semibold uppercase tracking-wider text-muted">Accounts</p>
+            <p class="text-[11px] font-semibold uppercase tracking-wider text-muted">
+              Accounts
+            </p>
           </div>
           <div class="py-1">
             <button
@@ -491,12 +558,26 @@ function navigateToFolder(path: string) {
               :class="account.active ? 'bg-primary/5' : ''"
               @click="switchAccount(account.email); showAccountMenu = false"
             >
-              <UAvatar :alt="account.email" size="xs" />
+              <UAvatar
+                :alt="account.email"
+                size="xs"
+              />
               <div class="flex-1 min-w-0">
-                <p class="text-xs font-medium truncate" :class="account.active ? 'text-primary' : ''">{{ account.email }}</p>
-                <p class="text-[11px] text-muted truncate">{{ account.organization }}</p>
+                <p
+                  class="text-xs font-medium truncate"
+                  :class="account.active ? 'text-primary' : ''"
+                >
+                  {{ account.email }}
+                </p>
+                <p class="text-[11px] text-muted truncate">
+                  {{ account.organization }}
+                </p>
               </div>
-              <UIcon v-if="account.active" name="i-lucide-check" class="text-primary text-sm shrink-0" />
+              <UIcon
+                v-if="account.active"
+                name="i-lucide-check"
+                class="text-primary text-sm shrink-0"
+              />
             </button>
           </div>
           <div class="border-t border-default py-1">
@@ -505,14 +586,20 @@ function navigateToFolder(path: string) {
               class="w-full flex items-center gap-2.5 px-3 py-2 text-left hover:bg-default transition-colors text-sm text-muted"
               @click="showAccountMenu = false"
             >
-              <UIcon name="i-lucide-plus" class="text-sm" />
+              <UIcon
+                name="i-lucide-plus"
+                class="text-sm"
+              />
               <span>Add account</span>
             </NuxtLink>
             <button
               class="w-full flex items-center gap-2.5 px-3 py-2 text-left hover:bg-default transition-colors text-sm text-red-500"
               @click="logout(); showAccountMenu = false"
             >
-              <UIcon name="i-lucide-log-out" class="text-sm" />
+              <UIcon
+                name="i-lucide-log-out"
+                class="text-sm"
+              />
               <span>Sign out</span>
             </button>
           </div>
@@ -531,20 +618,35 @@ function navigateToFolder(path: string) {
           class="fixed inset-0 z-50 bg-black/20 backdrop-blur-sm flex items-center justify-center"
         >
           <div class="bg-elevated rounded-xl p-6 shadow-xl text-center">
-            <UIcon name="i-lucide-loader-2" class="animate-spin text-2xl text-primary mb-2" />
-            <p class="text-sm text-muted">Switching account...</p>
+            <UIcon
+              name="i-lucide-loader-2"
+              class="animate-spin text-2xl text-primary mb-2"
+            />
+            <p class="text-sm text-muted">
+              Switching account...
+            </p>
           </div>
         </div>
 
-        <div v-if="sidebarOpen" class="p-3 rounded-lg bg-default">
+        <div
+          v-if="sidebarOpen"
+          class="p-3 rounded-lg bg-default"
+        >
           <button
             class="w-full flex items-center gap-2.5 text-left"
             @click="showAccountMenu = !showAccountMenu"
           >
-            <UAvatar :alt="user?.email || ''" size="xs" />
+            <UAvatar
+              :alt="user?.email || ''"
+              size="xs"
+            />
             <div class="flex-1 min-w-0">
-              <p class="text-xs font-medium truncate">{{ user?.email }}</p>
-              <p class="text-[11px] text-muted truncate">{{ user?.organization }}</p>
+              <p class="text-xs font-medium truncate">
+                {{ user?.email }}
+              </p>
+              <p class="text-[11px] text-muted truncate">
+                {{ user?.organization }}
+              </p>
             </div>
             <UIcon
               name="i-lucide-chevrons-up-down"
@@ -552,9 +654,15 @@ function navigateToFolder(path: string) {
             />
           </button>
         </div>
-        <div v-else class="flex flex-col items-center gap-2">
+        <div
+          v-else
+          class="flex flex-col items-center gap-2"
+        >
           <button @click="showAccountMenu = !showAccountMenu">
-            <UAvatar :alt="user?.email || ''" size="xs" />
+            <UAvatar
+              :alt="user?.email || ''"
+              size="xs"
+            />
           </button>
         </div>
       </div>
@@ -566,8 +674,15 @@ function navigateToFolder(path: string) {
       class="fixed inset-y-0 left-0 w-64 flex flex-col bg-elevated z-50 shadow-2xl lg:hidden"
     >
       <div class="px-5 pt-5 pb-3">
-        <NuxtLink to="/inbox" class="flex items-center gap-0.5">
-          <img :src="brand.logo" :alt="brand.name" class="w-12 h-12 shrink-0" />
+        <NuxtLink
+          to="/inbox"
+          class="flex items-center gap-0.5"
+        >
+          <img
+            :src="brand.logo"
+            :alt="brand.name"
+            class="w-12 h-12 shrink-0"
+          >
           <span class="font-bold text-lg tracking-tight">{{ brand.name }}</span>
         </NuxtLink>
       </div>
@@ -593,7 +708,10 @@ function navigateToFolder(path: string) {
           "
           @click="mobileSidebarOpen = false; navigateTo('/starred')"
         >
-          <UIcon name="i-lucide-star" class="text-base shrink-0" />
+          <UIcon
+            name="i-lucide-star"
+            class="text-base shrink-0"
+          />
           <span class="truncate flex-1">Starred</span>
         </button>
 
@@ -607,18 +725,35 @@ function navigateToFolder(path: string) {
           "
           @click="mobileSidebarOpen = false; navigateTo('/contacts')"
         >
-          <UIcon name="i-lucide-contact" class="text-base shrink-0" />
+          <UIcon
+            name="i-lucide-contact"
+            class="text-base shrink-0"
+          />
           <span class="truncate flex-1">Contacts</span>
         </button>
 
-        <p class="text-[11px] font-semibold uppercase tracking-wider text-muted px-3 mb-2">Folders</p>
+        <p class="text-[11px] font-semibold uppercase tracking-wider text-muted px-3 mb-2">
+          Folders
+        </p>
 
-        <div v-if="loadingFolders" class="flex justify-center p-4">
-          <UIcon name="i-lucide-loader-2" class="animate-spin text-muted" />
+        <div
+          v-if="loadingFolders"
+          class="flex justify-center p-4"
+        >
+          <UIcon
+            name="i-lucide-loader-2"
+            class="animate-spin text-muted"
+          />
         </div>
 
-        <ul v-else class="space-y-0.5">
-          <template v-for="folder in folders" :key="folder.path">
+        <ul
+          v-else
+          class="space-y-0.5"
+        >
+          <template
+            v-for="folder in folders"
+            :key="folder.path"
+          >
             <!-- Outbox before Trash -->
             <li v-if="folder.specialUse === '\\Trash'">
               <button
@@ -630,7 +765,10 @@ function navigateToFolder(path: string) {
                 "
                 @click="mobileSidebarOpen = false; navigateTo('/outbox')"
               >
-                <UIcon name="i-lucide-package" class="text-base shrink-0" />
+                <UIcon
+                  name="i-lucide-package"
+                  class="text-base shrink-0"
+                />
                 <span class="truncate flex-1">Outbox</span>
                 <span
                   v-if="outboxCount > 0"
@@ -656,7 +794,10 @@ function navigateToFolder(path: string) {
                 "
                 @click="navigateToFolder(folder.path)"
               >
-                <UIcon :name="folderIcon(folder.specialUse)" class="text-base shrink-0" />
+                <UIcon
+                  :name="folderIcon(folder.specialUse)"
+                  class="text-base shrink-0"
+                />
                 <span class="truncate flex-1">{{ folderDisplayName(folder) }}</span>
                 <span
                   v-if="folderCount(folder) > 0"
@@ -677,7 +818,10 @@ function navigateToFolder(path: string) {
 
       <div class="px-3 mb-3">
         <!-- Mobile account list -->
-        <div v-if="accounts.length > 1" class="mb-2">
+        <div
+          v-if="accounts.length > 1"
+          class="mb-2"
+        >
           <button
             v-for="account in accounts"
             :key="account.email"
@@ -685,20 +829,39 @@ function navigateToFolder(path: string) {
             :class="account.active ? 'bg-primary/10' : 'hover:bg-default'"
             @click="switchAccount(account.email); mobileSidebarOpen = false"
           >
-            <UAvatar :alt="account.email" size="xs" />
+            <UAvatar
+              :alt="account.email"
+              size="xs"
+            />
             <div class="flex-1 min-w-0">
-              <p class="text-xs font-medium truncate" :class="account.active ? 'text-primary' : ''">{{ account.email }}</p>
+              <p
+                class="text-xs font-medium truncate"
+                :class="account.active ? 'text-primary' : ''"
+              >
+                {{ account.email }}
+              </p>
             </div>
-            <UIcon v-if="account.active" name="i-lucide-check" class="text-primary text-sm shrink-0" />
+            <UIcon
+              v-if="account.active"
+              name="i-lucide-check"
+              class="text-primary text-sm shrink-0"
+            />
           </button>
         </div>
 
         <div class="p-3 rounded-lg bg-default">
           <div class="flex items-center gap-2.5">
-            <UAvatar :alt="user?.email || ''" size="xs" />
+            <UAvatar
+              :alt="user?.email || ''"
+              size="xs"
+            />
             <div class="flex-1 min-w-0">
-              <p class="text-xs font-medium truncate">{{ user?.email }}</p>
-              <p class="text-[11px] text-muted truncate">{{ user?.organization }}</p>
+              <p class="text-xs font-medium truncate">
+                {{ user?.email }}
+              </p>
+              <p class="text-[11px] text-muted truncate">
+                {{ user?.organization }}
+              </p>
             </div>
             <div class="flex items-center gap-0.5">
               <NuxtLink
@@ -707,14 +870,20 @@ function navigateToFolder(path: string) {
                 title="Add account"
                 @click="mobileSidebarOpen = false"
               >
-                <UIcon name="i-lucide-plus" class="text-sm" />
+                <UIcon
+                  name="i-lucide-plus"
+                  class="text-sm"
+                />
               </NuxtLink>
               <button
                 class="p-1.5 rounded hover:bg-elevated text-muted hover:text-highlighted transition-colors"
                 title="Sign out"
                 @click="logout"
               >
-                <UIcon name="i-lucide-log-out" class="text-sm" />
+                <UIcon
+                  name="i-lucide-log-out"
+                  class="text-sm"
+                />
               </button>
             </div>
           </div>
@@ -763,7 +932,7 @@ function navigateToFolder(path: string) {
               class="flex-1 bg-transparent border-0 outline-none text-sm py-2 px-3"
               @focus="searchFocused = true"
               @keydown="handleSearchKeydown"
-            />
+            >
             <!-- Clear search button (when search is active) -->
             <button
               v-if="searchActive"
@@ -772,7 +941,10 @@ function navigateToFolder(path: string) {
               title="Clear search"
               @click="handleClearSearch"
             >
-              <UIcon name="i-lucide-x" class="text-sm" />
+              <UIcon
+                name="i-lucide-x"
+                class="text-sm"
+              />
             </button>
             <button
               type="button"
@@ -780,7 +952,13 @@ function navigateToFolder(path: string) {
               title="Show search options"
               @click="showSearchFilters = !showSearchFilters; searchFocused = false"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+              >
                 <path d="M3 17v2h6v-2H3zM3 5v2h10V5H3zm10 16v-2h8v-2h-8v-2h-2v6h2zM7 9v2H3v2h4v2h2V9H7zm14 4v-2H11v2h10zm-6-4h2V7h4V5h-4V3h-2v6z" />
               </svg>
             </button>
@@ -793,7 +971,10 @@ function navigateToFolder(path: string) {
           >
             <!-- Folder context -->
             <div class="px-4 py-2 text-xs text-muted">
-              <UIcon name="i-lucide-search" class="text-[10px] mr-1" />
+              <UIcon
+                name="i-lucide-search"
+                class="text-[10px] mr-1"
+              />
               Searching in <strong class="text-highlighted">{{ currentFolderName }}</strong>
             </div>
 
@@ -803,7 +984,10 @@ function navigateToFolder(path: string) {
                 class="w-full flex items-center gap-2.5 px-3 py-1.5 rounded-md hover:bg-default text-sm text-left"
                 @mousedown.prevent="searchQuery = `from:`; searchFocused = true"
               >
-                <UIcon name="i-lucide-user" class="text-muted text-xs" />
+                <UIcon
+                  name="i-lucide-user"
+                  class="text-muted text-xs"
+                />
                 <span class="text-muted">from:</span>
                 <span class="text-xs text-muted ml-auto">Search by sender</span>
               </button>
@@ -811,7 +995,10 @@ function navigateToFolder(path: string) {
                 class="w-full flex items-center gap-2.5 px-3 py-1.5 rounded-md hover:bg-default text-sm text-left"
                 @mousedown.prevent="searchQuery = `subject:`; searchFocused = true"
               >
-                <UIcon name="i-lucide-text" class="text-muted text-xs" />
+                <UIcon
+                  name="i-lucide-text"
+                  class="text-muted text-xs"
+                />
                 <span class="text-muted">subject:</span>
                 <span class="text-xs text-muted ml-auto">Search by subject</span>
               </button>
@@ -819,7 +1006,10 @@ function navigateToFolder(path: string) {
                 class="w-full flex items-center gap-2.5 px-3 py-1.5 rounded-md hover:bg-default text-sm text-left"
                 @mousedown.prevent="searchQuery = `to:`; searchFocused = true"
               >
-                <UIcon name="i-lucide-at-sign" class="text-muted text-xs" />
+                <UIcon
+                  name="i-lucide-at-sign"
+                  class="text-muted text-xs"
+                />
                 <span class="text-muted">to:</span>
                 <span class="text-xs text-muted ml-auto">Search by recipient</span>
               </button>
@@ -844,7 +1034,10 @@ function navigateToFolder(path: string) {
                     class="w-full flex items-center gap-2.5 px-3 py-1.5 rounded-md hover:bg-default text-sm text-left"
                     @mousedown.prevent="useRecentSearch(recent)"
                   >
-                    <UIcon name="i-lucide-clock" class="text-muted text-xs shrink-0" />
+                    <UIcon
+                      name="i-lucide-clock"
+                      class="text-muted text-xs shrink-0"
+                    />
                     <span class="truncate">{{ recent }}</span>
                   </button>
                 </div>
@@ -864,7 +1057,7 @@ function navigateToFolder(path: string) {
                 type="text"
                 placeholder=""
                 class="bg-default border border-default rounded-md px-3 py-1.5 text-sm outline-none focus:ring-1 focus:ring-primary"
-              />
+              >
 
               <label class="text-muted text-right whitespace-nowrap">To</label>
               <input
@@ -872,7 +1065,7 @@ function navigateToFolder(path: string) {
                 type="text"
                 placeholder=""
                 class="bg-default border border-default rounded-md px-3 py-1.5 text-sm outline-none focus:ring-1 focus:ring-primary"
-              />
+              >
 
               <label class="text-muted text-right whitespace-nowrap">Subject</label>
               <input
@@ -880,7 +1073,7 @@ function navigateToFolder(path: string) {
                 type="text"
                 placeholder=""
                 class="bg-default border border-default rounded-md px-3 py-1.5 text-sm outline-none focus:ring-1 focus:ring-primary"
-              />
+              >
 
               <label class="text-muted text-right whitespace-nowrap">Includes the words</label>
               <input
@@ -888,7 +1081,7 @@ function navigateToFolder(path: string) {
                 type="text"
                 placeholder=""
                 class="bg-default border border-default rounded-md px-3 py-1.5 text-sm outline-none focus:ring-1 focus:ring-primary"
-              />
+              >
 
               <label class="text-muted text-right whitespace-nowrap">Doesn't have</label>
               <input
@@ -896,7 +1089,7 @@ function navigateToFolder(path: string) {
                 type="text"
                 placeholder=""
                 class="bg-default border border-default rounded-md px-3 py-1.5 text-sm outline-none focus:ring-1 focus:ring-primary"
-              />
+              >
 
               <label class="text-muted text-right whitespace-nowrap">Size</label>
               <div class="flex items-center gap-2">
@@ -904,15 +1097,19 @@ function navigateToFolder(path: string) {
                   v-model="searchFilters.sizeComparator"
                   class="bg-default border border-default rounded-md px-2 py-1.5 text-sm outline-none focus:ring-1 focus:ring-primary"
                 >
-                  <option value="greater">greater than</option>
-                  <option value="less">less than</option>
+                  <option value="greater">
+                    greater than
+                  </option>
+                  <option value="less">
+                    less than
+                  </option>
                 </select>
                 <input
                   v-model="searchFilters.size"
                   type="number"
                   placeholder=""
                   class="bg-default border border-default rounded-md px-3 py-1.5 text-sm outline-none focus:ring-1 focus:ring-primary w-24"
-                />
+                >
                 <select
                   v-model="searchFilters.sizeUnit"
                   class="bg-default border border-default rounded-md px-2 py-1.5 text-sm outline-none focus:ring-1 focus:ring-primary"
@@ -943,7 +1140,7 @@ function navigateToFolder(path: string) {
                   v-model="searchFilters.dateWithin"
                   type="date"
                   class="bg-default border border-default rounded-md px-3 py-1.5 text-sm outline-none focus:ring-1 focus:ring-primary"
-                />
+                >
               </div>
             </div>
 
@@ -973,7 +1170,10 @@ function navigateToFolder(path: string) {
         />
 
         <div class="flex items-center gap-0.5">
-          <UColorModeButton size="sm" variant="ghost" />
+          <UColorModeButton
+            size="sm"
+            variant="ghost"
+          />
           <UButton
             to="/settings"
             icon="i-lucide-settings"
