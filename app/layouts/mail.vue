@@ -208,13 +208,6 @@ const showDropdown = computed(() => {
 
 const showAccountMenu = ref(false)
 
-// Persist current route so page refreshes return to the right folder
-watch(() => route.fullPath, (path) => {
-  if (import.meta.client) {
-    sessionStorage.setItem('hourinbox_last_route', path)
-  }
-}, { immediate: true })
-
 onMounted(() => {
   fetchFolders()
   fetchAccounts()

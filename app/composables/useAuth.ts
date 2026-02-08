@@ -20,7 +20,8 @@ export function useAuth() {
   async function fetchUser() {
     try {
       loading.value = true
-      user.value = await $fetch('/api/auth/me')
+      const data = await $fetch('/api/auth/me')
+      user.value = data || null
     } catch {
       user.value = null
     } finally {

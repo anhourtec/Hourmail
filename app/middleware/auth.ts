@@ -9,15 +9,12 @@ export default defineNuxtRouteMiddleware(async (to) => {
   const publicRoutes = ['/login', '/register']
 
   if (!user.value && !publicRoutes.includes(to.path)) {
-    return navigateTo('/login')
+    return navigateTo({ path: '/login', query: { redirect: to.fullPath } })
   }
 
   if (user.value && publicRoutes.includes(to.path) && to.query.addAccount !== 'true') {
-    let target = '/inbox'
-    if (import.meta.client) {
-      const lastRoute = sessionStorage.getItem('hourinbox_last_route')
-      if (lastRoute && lastRoute !== '/' && !publicRoutes.includes(lastRoute)) target = lastRoute
-    }
+    const redirect = to.query.redirect as string
+    const target = redirect && redirect !== '/' && !publicRoutes.includes(redirect) ? redirect : '/inbox'
     return navigateTo(target)
   }
 })

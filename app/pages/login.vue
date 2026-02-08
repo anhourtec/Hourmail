@@ -17,7 +17,8 @@ async function handleLogin() {
 
   try {
     await login(email.value, password.value)
-    navigateTo('/inbox')
+    const redirect = route.query.redirect as string
+    navigateTo(redirect && redirect !== '/' ? redirect : '/inbox')
   } catch (err: unknown) {
     const e = err as { data?: { message?: string } }
     error.value = e.data?.message || 'Login failed. Please check your credentials.'
