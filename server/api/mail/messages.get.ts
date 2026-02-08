@@ -26,7 +26,7 @@ export default defineEventHandler(async (event) => {
 
   try {
     const result = await listMessages(session, password, folder, page, limit)
-    await redis.set(cacheKey, JSON.stringify(result), 'EX', 30)
+    await setMailCache(session.email, cacheKey, result, 30)
     return result
   } catch (err: unknown) {
     const error = err as Error

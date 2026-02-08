@@ -24,7 +24,8 @@ export default defineEventHandler(async (event) => {
       add: addFlags,
       remove: removeFlags
     })
-    await invalidateMailCache(session.email)
+    // Invalidate only the affected folder's cache (non-blocking)
+    invalidateMailCache(session.email, folder).catch(() => {})
     return { success: true }
   } catch (err: unknown) {
     const error = err as Error

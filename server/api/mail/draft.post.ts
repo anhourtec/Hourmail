@@ -15,12 +15,13 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: 'Missing body' })
   }
 
-  const { to, cc, bcc, subject, html } = body as {
+  const { to, cc, bcc, subject, html, replaceUid } = body as {
     to?: string
     cc?: string
     bcc?: string
     subject?: string
     html?: string
+    replaceUid?: number
   }
 
   // Build a minimal RFC 2822 message for the draft
@@ -47,8 +48,10 @@ export default defineEventHandler(async (event) => {
   const password = decryptPassword(encryptedPassword)
 
   try {
-    await appendDraft(session, password, rawMessage)
-    return { success: true }
+    const result = await appendDraft(session, password, rawMessage, replaceUid || undefined)
+    // Invalidate Drafts folder cache so it shows the new draft immediately
+    invalidateMailCache(session.email).catch(() => {})
+    return { success: true, uid: result.uid, folder: result.folder }
   } catch (err: unknown) {
     const error = err as Error
     throw createError({ statusCode: 502, message: `IMAP error: ${error.message}` })

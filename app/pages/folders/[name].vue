@@ -110,25 +110,20 @@ async function handleDraftClick(msg: { uid: number; flags: string[] }) {
   }
 }
 
-async function handleDeleteDraft(e: Event, uid: number) {
+function handleDeleteDraft(e: Event, uid: number) {
   e.preventDefault()
   e.stopPropagation()
-  await deleteEmail(uid, folderPath.value)
+  deleteEmail(uid, folderPath.value)
   fetchFolders(true)
 }
 
-async function handleDeleteSelectedDrafts() {
-  deletingAll.value = true
-  try {
-    const uids = [...selectedMessages.value]
-    for (const uid of uids) {
-      await deleteEmail(uid, folderPath.value)
-    }
-    clearSelection()
-    fetchFolders(true)
-  } finally {
-    deletingAll.value = false
+function handleDeleteSelectedDrafts() {
+  const uids = [...selectedMessages.value]
+  for (const uid of uids) {
+    deleteEmail(uid, folderPath.value)
   }
+  clearSelection()
+  fetchFolders(true)
 }
 
 function folderDisplayName(path: string) {

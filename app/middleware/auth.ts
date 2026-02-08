@@ -13,6 +13,11 @@ export default defineNuxtRouteMiddleware(async (to) => {
   }
 
   if (user.value && publicRoutes.includes(to.path) && to.query.addAccount !== 'true') {
-    return navigateTo('/inbox')
+    let target = '/inbox'
+    if (import.meta.client) {
+      const lastRoute = sessionStorage.getItem('hourinbox_last_route')
+      if (lastRoute && lastRoute !== '/' && !publicRoutes.includes(lastRoute)) target = lastRoute
+    }
+    return navigateTo(target)
   }
 })

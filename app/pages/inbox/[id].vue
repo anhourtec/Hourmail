@@ -23,13 +23,41 @@ const showReplyBcc = ref(false)
 const replySending = ref(false)
 const replyContainerRef = ref<HTMLDivElement>()
 
-onMounted(async () => {
+// Try to show partial data instantly from the message list
+function showPartialFromList() {
+  if (currentMessage.value) return // already have full data from cache
+  let listMsg = null
   if (isNumericUid(idParam)) {
-    // Backwards-compatible numeric UID
+    listMsg = messages.value.find(m => m.uid === Number(idParam))
+  } else {
+    const decoded = decodeMessageId(idParam)
+    if (decoded) {
+      listMsg = messages.value.find(m => {
+        const stripped = m.messageId?.replace(/^<|>$/g, '')
+        return stripped === decoded
+      })
+    }
+  }
+  if (listMsg) {
+    // Show what we have from the list immediately (subject, from, date, flags)
+    currentMessage.value = {
+      ...listMsg,
+      html: '',
+      text: '',
+      attachments: []
+    } as any
+    uid.value = listMsg.uid
+  }
+}
+
+onMounted(async () => {
+  // Show partial data from list cache immediately
+  showPartialFromList()
+
+  if (isNumericUid(idParam)) {
     uid.value = Number(idParam)
     await fetchMessage(uid.value, folder)
   } else {
-    // Base64url-encoded Message-ID
     const decoded = decodeMessageId(idParam)
     const fromList = decoded
       ? messages.value.find(m => {
@@ -42,7 +70,6 @@ onMounted(async () => {
       uid.value = fromList.uid
       await fetchMessage(uid.value, folder)
     } else {
-      // Server will resolve Message-ID → UID via IMAP SEARCH
       await fetchMessage(idParam, folder)
       if (currentMessage.value) {
         uid.value = currentMessage.value.uid
@@ -234,6 +261,23 @@ function formatFileSize(bytes: number) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
+function getAttachmentIcon(contentType: string) {
+  if (!contentType) return 'i-lucide-file'
+  if (contentType.startsWith('image/')) return 'i-lucide-image'
+  if (contentType === 'application/pdf') return 'i-lucide-file-text'
+  if (contentType.startsWith('video/')) return 'i-lucide-film'
+  if (contentType.startsWith('audio/')) return 'i-lucide-music'
+  if (contentType.includes('zip') || contentType.includes('archive') || contentType.includes('compressed')) return 'i-lucide-file-archive'
+  if (contentType.includes('spreadsheet') || contentType.includes('excel') || contentType.includes('.sheet')) return 'i-lucide-file-spreadsheet'
+  if (contentType.includes('word') || contentType.includes('document')) return 'i-lucide-file-text'
+  return 'i-lucide-file'
+}
+
+function isViewableType(contentType: string) {
+  if (!contentType) return false
+  return contentType.startsWith('image/') || contentType === 'application/pdf' || contentType.startsWith('text/')
+}
+
 const replyLabel = computed(() => {
   switch (replyMode.value) {
     case 'replyAll': return 'Reply all'
@@ -245,8 +289,8 @@ const replyLabel = computed(() => {
 
 <template>
   <div class="h-full flex flex-col">
-    <!-- Loading -->
-    <div v-if="loadingMessage" class="flex items-center justify-center flex-1">
+    <!-- Loading (only show full spinner if we have no data at all) -->
+    <div v-if="loadingMessage && !currentMessage" class="flex items-center justify-center flex-1">
       <UIcon name="i-lucide-loader-2" class="animate-spin text-3xl text-primary" />
     </div>
 
@@ -371,22 +415,38 @@ const replyLabel = computed(() => {
               :key="att.filename"
               class="flex items-center gap-2 px-3 py-2 bg-elevated rounded-lg border border-default"
             >
-              <UIcon name="i-lucide-paperclip" class="text-muted text-sm" />
-              <div>
-                <p class="text-xs font-medium">{{ att.filename }}</p>
+              <UIcon :name="getAttachmentIcon(att.contentType)" class="text-muted text-sm shrink-0" />
+              <a
+                :href="`/api/mail/attachment?uid=${uid}&folder=${encodeURIComponent(folder)}&filename=${encodeURIComponent(att.filename)}&mode=view`"
+                target="_blank"
+                class="hover:underline cursor-pointer min-w-0"
+              >
+                <p class="text-xs font-medium truncate">{{ att.filename }}</p>
                 <p class="text-[11px] text-muted">{{ formatFileSize(att.size) }}</p>
-              </div>
+              </a>
+              <a
+                :href="`/api/mail/attachment?uid=${uid}&folder=${encodeURIComponent(folder)}&filename=${encodeURIComponent(att.filename)}`"
+                download
+                class="text-muted hover:text-highlighted transition-colors cursor-pointer ml-1 shrink-0"
+                title="Download"
+              >
+                <UIcon name="i-lucide-download" class="text-sm" />
+              </a>
             </div>
           </div>
 
           <!-- Email Body -->
           <div class="border-t border-default pt-4">
+            <div v-if="!currentMessage.html && !currentMessage.text && loadingMessage" class="flex items-center gap-2 py-8 justify-center">
+              <UIcon name="i-lucide-loader-2" class="animate-spin text-lg text-primary" />
+              <span class="text-sm text-muted">Loading message...</span>
+            </div>
             <div
-              v-if="currentMessage.html"
+              v-else-if="currentMessage.html"
               class="prose prose-sm max-w-none dark:prose-invert"
               v-html="currentMessage.html"
             />
-            <pre v-else class="whitespace-pre-wrap text-sm font-sans">{{ currentMessage.text }}</pre>
+            <pre v-else-if="currentMessage.text" class="whitespace-pre-wrap text-sm font-sans">{{ currentMessage.text }}</pre>
           </div>
 
           <!-- Inline Reply Compose -->

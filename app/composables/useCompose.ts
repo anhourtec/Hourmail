@@ -25,6 +25,10 @@ const draftSavedAt = ref<Date | null>(null)
 // Track source draft for deletion after sending
 const draftSource = reactive<{ uid: number; folder: string } | { uid: 0; folder: '' }>({ uid: 0, folder: '' })
 
+// Track the server-side draft UID for replace-on-save
+const serverDraftUid = ref(0)
+let serverSaveInFlight = false
+
 let urlSyncInitialized = false
 let draftSaveTimer: ReturnType<typeof setInterval> | null = null
 
@@ -75,8 +79,9 @@ function startDraftAutoSave() {
   draftSaveTimer = setInterval(() => {
     if (composeState.value !== 'closed' && hasDraftContent()) {
       saveDraft()
+      saveDraftToServerQuiet()
     }
-  }, 3000)
+  }, 2000)
 }
 
 function stopDraftAutoSave() {
@@ -84,6 +89,41 @@ function stopDraftAutoSave() {
     clearInterval(draftSaveTimer)
     draftSaveTimer = null
   }
+}
+
+/** Save draft to IMAP server silently (called by auto-save timer) */
+function saveDraftToServerQuiet() {
+  if (!import.meta.client || serverSaveInFlight) return
+  if (!hasDraftContent()) return
+  serverSaveInFlight = true
+
+  $fetch<{ success: boolean; uid: number; folder: string }>('/api/mail/draft', {
+    method: 'POST',
+    body: {
+      to: composeData.to || undefined,
+      cc: composeData.cc || undefined,
+      bcc: composeData.bcc || undefined,
+      subject: composeData.subject || undefined,
+      html: composeData.body || undefined,
+      replaceUid: serverDraftUid.value || undefined
+    }
+  }).then((res) => {
+    if (res.uid) serverDraftUid.value = res.uid
+    draftSavedAt.value = new Date()
+    const { fetchFolders, currentFolder, fetchMessages, invalidateFolderCache, folders } = useMail()
+    const draftsFolder = folders.value.find(f => f.specialUse === '\\Drafts')
+    const draftsPath = draftsFolder?.path || 'Drafts'
+    invalidateFolderCache(draftsPath)
+    if (currentFolder.value === draftsPath) {
+      fetchMessages(draftsPath, 1, true)
+    }
+    // Refresh folders for accurate server counts
+    fetchFolders(true)
+  }).catch(() => {
+    // Silent fail
+  }).finally(() => {
+    serverSaveInFlight = false
+  })
 }
 
 export function useCompose() {
@@ -112,9 +152,12 @@ export function useCompose() {
     if (source) {
       draftSource.uid = source.uid
       draftSource.folder = source.folder
+      // When editing an existing draft, track its UID for replace-on-save
+      serverDraftUid.value = source.uid
     } else {
       draftSource.uid = 0
       draftSource.folder = ''
+      serverDraftUid.value = 0
     }
     composeState.value = 'open'
     startDraftAutoSave()
@@ -124,18 +167,25 @@ export function useCompose() {
     if (!import.meta.client) return
     if (!hasDraftContent()) return
     try {
-      await $fetch('/api/mail/draft', {
+      const res = await $fetch<{ success: boolean; uid: number; folder: string }>('/api/mail/draft', {
         method: 'POST',
         body: {
           to: composeData.to || undefined,
           cc: composeData.cc || undefined,
           bcc: composeData.bcc || undefined,
           subject: composeData.subject || undefined,
-          html: composeData.body || undefined
+          html: composeData.body || undefined,
+          replaceUid: serverDraftUid.value || undefined
         }
       })
-      // Refresh folder counts so Drafts count updates in sidebar
-      const { fetchFolders } = useMail()
+      if (res.uid) serverDraftUid.value = res.uid
+      const { fetchFolders, currentFolder, fetchMessages, invalidateFolderCache, folders } = useMail()
+      const draftsFolder = folders.value.find(f => f.specialUse === '\\Drafts')
+      const draftsPath = draftsFolder?.path || 'Drafts'
+      invalidateFolderCache(draftsPath)
+      if (currentFolder.value === draftsPath) {
+        fetchMessages(draftsPath, 1, true)
+      }
       fetchFolders(true)
     } catch {
       // Silently fail — draft save is best-effort
@@ -144,11 +194,12 @@ export function useCompose() {
 
   async function closeCompose() {
     stopDraftAutoSave()
-    // Save draft to IMAP Drafts folder if there's content
+    // Final save to IMAP Drafts folder if there's content
     if (hasDraftContent()) {
       await saveDraftToServer()
     }
     clearDraft()
+    serverDraftUid.value = 0
     draftSource.uid = 0
     draftSource.folder = ''
     composeState.value = 'closed'
@@ -162,7 +213,19 @@ export function useCompose() {
 
   function discardCompose() {
     stopDraftAutoSave()
+    // Delete the server draft if one was saved
+    if (serverDraftUid.value) {
+      const uidToDelete = serverDraftUid.value
+      const { deleteEmail, folders, invalidateFolderCache, fetchFolders } = useMail()
+      const draftsFolder = folders.value.find(f => f.specialUse === '\\Drafts')
+      const draftsPath = draftsFolder?.path || 'Drafts'
+      // deleteEmail already calls adjustFolderCount(-1) optimistically
+      deleteEmail(uidToDelete, draftsPath)
+      invalidateFolderCache(draftsPath)
+      fetchFolders(true)
+    }
     clearDraft()
+    serverDraftUid.value = 0
     draftSource.uid = 0
     draftSource.folder = ''
     composeState.value = 'closed'

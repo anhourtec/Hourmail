@@ -52,6 +52,8 @@ const searchLoading = ref(false)
 
 // Client-side message cache: key = "folder:page"
 const messageCache = new Map<string, CachedPage>()
+// Client-side individual message cache: key = "folder:identifier"
+const messageDetailCache = new Map<string, { message: MailMessageFull, fetchedAt: number }>()
 const clientCacheEnabled = ref(true)
 let cacheInitialized = false
 
@@ -74,15 +76,24 @@ function restoreCacheFromSession() {
   try {
     const stored = sessionStorage.getItem(SESSION_CACHE_KEY)
     if (!stored) return
-    const obj = JSON.parse(stored) as Record<string, CachedPage>
+    const obj = JSON.parse(stored)
+    // Validate: must be a plain object
+    if (!obj || typeof obj !== 'object' || Array.isArray(obj)) {
+      sessionStorage.removeItem(SESSION_CACHE_KEY)
+      return
+    }
     const now = Date.now()
     for (const [k, v] of Object.entries(obj)) {
-      // Only restore entries less than 5 minutes old
-      if (now - v.fetchedAt < CACHE_MAX_AGE) {
-        messageCache.set(k, v)
+      const entry = v as CachedPage
+      // Validate each entry has expected structure
+      if (!entry || !Array.isArray(entry.messages) || typeof entry.fetchedAt !== 'number') continue
+      if (now - entry.fetchedAt < CACHE_MAX_AGE) {
+        messageCache.set(k, entry)
       }
     }
-  } catch { /* ignore */ }
+  } catch {
+    sessionStorage.removeItem(SESSION_CACHE_KEY)
+  }
 }
 
 function persistFoldersToSession() {
@@ -96,8 +107,19 @@ function restoreFoldersFromSession() {
   if (!import.meta.client) return
   try {
     const stored = sessionStorage.getItem(SESSION_FOLDERS_KEY)
-    if (stored) folders.value = JSON.parse(stored)
-  } catch { /* ignore */ }
+    if (!stored) return
+    const parsed = JSON.parse(stored)
+    // Validate: must be an array of objects with path and name strings
+    if (!Array.isArray(parsed) || !parsed.every((f: unknown) =>
+      f && typeof f === 'object' && typeof (f as Record<string, unknown>).path === 'string' && typeof (f as Record<string, unknown>).name === 'string'
+    )) {
+      sessionStorage.removeItem(SESSION_FOLDERS_KEY)
+      return
+    }
+    folders.value = parsed
+  } catch {
+    sessionStorage.removeItem(SESSION_FOLDERS_KEY)
+  }
 }
 
 function persistStateToSession() {
@@ -154,6 +176,7 @@ export function useMail() {
   function resetAllState() {
     // Clear everything for account switch
     messageCache.clear()
+    messageDetailCache.clear()
     messages.value = []
     folders.value = []
     currentMessage.value = null
@@ -285,14 +308,32 @@ export function useMail() {
   }
 
   async function fetchMessage(identifier: number | string, folder: string = 'INBOX') {
+    const apiPath = `/api/mail/messages/${identifier}`
+    const detailKey = `${folder}:${identifier}`
+
+    // Check client-side cache first (2 min TTL)
+    if (clientCacheEnabled.value) {
+      const cached = messageDetailCache.get(detailKey)
+      if (cached && Date.now() - cached.fetchedAt < 120000) {
+        currentMessage.value = cached.message
+        // Background refresh silently
+        $fetch<MailMessageFull>(apiPath, { query: { folder } }).then((data) => {
+          currentMessage.value = data
+          messageDetailCache.set(detailKey, { message: data, fetchedAt: Date.now() })
+        }).catch(() => {})
+        return
+      }
+    }
+
     loadingMessage.value = true
     try {
-      // If identifier is a number, use directly. If string, it's a base64url slug.
-      const apiPath = `/api/mail/messages/${identifier}`
       const data = await $fetch<MailMessageFull>(apiPath, {
         query: { folder }
       })
       currentMessage.value = data
+      if (clientCacheEnabled.value) {
+        messageDetailCache.set(detailKey, { message: data, fetchedAt: Date.now() })
+      }
     } finally {
       loadingMessage.value = false
     }
@@ -352,24 +393,17 @@ export function useMail() {
       method: 'POST',
       body: options
     })
-    // Invalidate sent folder cache
+    // Optimistically bump sent folder count and invalidate cache
     const sentFolder = folders.value.find(f => f.specialUse === '\\Sent')
     if (sentFolder) {
+      adjustFolderCount(sentFolder.path, 1)
       invalidateFolderCache(sentFolder.path)
     }
     return result
   }
 
   async function toggleRead(uid: number, isRead: boolean, folder: string = 'INBOX') {
-    await $fetch(`/api/mail/messages/${uid}`, {
-      method: 'PUT',
-      body: {
-        folder,
-        addFlags: isRead ? ['\\Seen'] : undefined,
-        removeFlags: !isRead ? ['\\Seen'] : undefined
-      }
-    })
-    // Update local state immediately
+    // Optimistic: update UI first, then fire API in background
     const msg = messages.value.find(m => m.uid === uid)
     if (msg) {
       if (isRead && !msg.flags.includes('\\Seen')) {
@@ -379,18 +413,29 @@ export function useMail() {
       }
     }
     updateCurrentPageCache()
-  }
 
-  async function toggleStarred(uid: number, isStarred: boolean, folder: string = 'INBOX') {
-    await $fetch(`/api/mail/messages/${uid}`, {
+    $fetch(`/api/mail/messages/${uid}`, {
       method: 'PUT',
       body: {
         folder,
-        addFlags: isStarred ? ['\\Flagged'] : undefined,
-        removeFlags: !isStarred ? ['\\Flagged'] : undefined
+        addFlags: isRead ? ['\\Seen'] : undefined,
+        removeFlags: !isRead ? ['\\Seen'] : undefined
+      }
+    }).catch(() => {
+      // Revert on failure
+      if (msg) {
+        if (isRead) {
+          msg.flags = msg.flags.filter(f => f !== '\\Seen')
+        } else if (!msg.flags.includes('\\Seen')) {
+          msg.flags.push('\\Seen')
+        }
+        updateCurrentPageCache()
       }
     })
-    // Update local state immediately
+  }
+
+  async function toggleStarred(uid: number, isStarred: boolean, folder: string = 'INBOX') {
+    // Optimistic: update UI first, then fire API in background
     const msg = messages.value.find(m => m.uid === uid)
     if (msg) {
       if (isStarred && !msg.flags.includes('\\Flagged')) {
@@ -400,6 +445,25 @@ export function useMail() {
       }
     }
     updateCurrentPageCache()
+
+    $fetch(`/api/mail/messages/${uid}`, {
+      method: 'PUT',
+      body: {
+        folder,
+        addFlags: isStarred ? ['\\Flagged'] : undefined,
+        removeFlags: !isStarred ? ['\\Flagged'] : undefined
+      }
+    }).catch(() => {
+      // Revert on failure
+      if (msg) {
+        if (isStarred) {
+          msg.flags = msg.flags.filter(f => f !== '\\Flagged')
+        } else if (!msg.flags.includes('\\Flagged')) {
+          msg.flags.push('\\Flagged')
+        }
+        updateCurrentPageCache()
+      }
+    })
   }
 
   async function archiveEmail(uid: number, folder: string = 'INBOX') {
@@ -410,19 +474,85 @@ export function useMail() {
     // Remove from local state immediately
     messages.value = messages.value.filter(m => m.uid !== uid)
     totalMessages.value = Math.max(0, totalMessages.value - 1)
+    adjustFolderCount(folder, -1)
     invalidateFolderCache(folder)
   }
 
   async function deleteEmail(uid: number, folder: string = 'INBOX') {
-    await $fetch(`/api/mail/messages/${uid}`, {
-      method: 'DELETE',
-      query: { folder }
-    })
-    // Remove from local state immediately
+    // Optimistic: remove from UI first
+    const removedMsg = messages.value.find(m => m.uid === uid)
+    const removedIndex = messages.value.findIndex(m => m.uid === uid)
     messages.value = messages.value.filter(m => m.uid !== uid)
     totalMessages.value = Math.max(0, totalMessages.value - 1)
-    // Invalidate all pages for this folder since indices shift
+    adjustFolderCount(folder, -1)
     invalidateFolderCache(folder)
+
+    $fetch(`/api/mail/messages/${uid}`, {
+      method: 'DELETE',
+      query: { folder }
+    }).catch(() => {
+      // Revert on failure
+      if (removedMsg && removedIndex >= 0) {
+        messages.value.splice(removedIndex, 0, removedMsg)
+        totalMessages.value += 1
+        adjustFolderCount(folder, 1)
+      }
+    })
+  }
+
+  /** Optimistically adjust a folder's message count (and unseen count for INBOX) */
+  function adjustFolderCount(folderPath: string, delta: number) {
+    const f = folders.value.find(f => f.path === folderPath)
+    if (f) {
+      f.messages = Math.max(0, f.messages + delta)
+      if (delta < 0 && folderPath === 'INBOX') {
+        f.unseen = Math.max(0, f.unseen + delta)
+      }
+      persistFoldersToSession()
+    }
+  }
+
+  // --- Preloading ---
+
+  let preloadStarted = false
+
+  function preloadAllFolders() {
+    if (preloadStarted || !clientCacheEnabled.value || !import.meta.client) return
+    preloadStarted = true
+
+    const folderList = folders.value
+    if (folderList.length === 0) return
+
+    // Fetch page 1 of each folder silently in background
+    for (const folder of folderList) {
+      const cacheKey = `${folder.path}:1`
+      // Skip if already cached
+      if (messageCache.has(cacheKey)) continue
+
+      $fetch<{ messages: MailMessage[], total: number }>('/api/mail/messages', {
+        query: { folder: folder.path, page: 1, limit: 50 }
+      }).then((data) => {
+        messageCache.set(cacheKey, {
+          messages: data.messages,
+          total: data.total,
+          fetchedAt: Date.now()
+        })
+        persistCacheToSession()
+      }).catch(() => {
+        // Silent fail — preloading is best-effort
+      })
+    }
+
+    // Also preload starred messages into sessionStorage
+    const STARRED_CACHE_KEY = 'hourinbox_starred_cache'
+    try {
+      const existing = sessionStorage.getItem(STARRED_CACHE_KEY)
+      if (!existing || Date.now() - JSON.parse(existing)._ts > 120000) {
+        $fetch<{ messages: MailMessage[], total: number }>('/api/mail/starred').then((data) => {
+          sessionStorage.setItem(STARRED_CACHE_KEY, JSON.stringify({ ...data, _ts: Date.now() }))
+        }).catch(() => {})
+      }
+    } catch { /* ignore */ }
   }
 
   // --- Selection functions ---
@@ -478,6 +608,8 @@ export function useMail() {
     setClientCacheEnabled,
     clearMessageCache,
     resetAllState,
-    invalidateFolderCache
+    invalidateFolderCache,
+    adjustFolderCount,
+    preloadAllFolders
   }
 }

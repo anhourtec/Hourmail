@@ -25,15 +25,32 @@ export default defineEventHandler(async (event) => {
     if (!messageId) {
       throw createError({ statusCode: 400, message: 'Invalid message identifier' })
     }
-    const resolved = await findUidByMessageId(session, password, folder, messageId)
-    if (!resolved) {
-      throw createError({ statusCode: 404, message: 'Message not found' })
+
+    // Check cache for Message-ID → UID resolution
+    const resolveKey = `cache:resolve:${session.email}:${folder}:${messageId}`
+    const cachedUid = await redis.get(resolveKey)
+    if (cachedUid) {
+      uid = parseInt(cachedUid)
+    } else {
+      const resolved = await findUidByMessageId(session, password, folder, messageId)
+      if (!resolved) {
+        throw createError({ statusCode: 404, message: 'Message not found' })
+      }
+      uid = resolved
+      // Cache the resolution for 5 minutes
+      await redis.set(resolveKey, String(uid), 'EX', 300)
     }
-    uid = resolved
   }
 
   if (!uid) {
     throw createError({ statusCode: 400, message: 'Invalid message UID' })
+  }
+
+  // Check Redis cache for full message (60s TTL)
+  const cacheKey = `cache:msg:${session.email}:${folder}:${uid}`
+  const cached = await redis.get(cacheKey)
+  if (cached) {
+    return JSON.parse(cached)
   }
 
   try {
@@ -41,6 +58,8 @@ export default defineEventHandler(async (event) => {
     if (!message) {
       throw createError({ statusCode: 404, message: 'Message not found' })
     }
+    // Cache for 60 seconds
+    await setMailCache(session.email, cacheKey, message, 60)
     return message
   } catch (err: unknown) {
     const error = err as Error

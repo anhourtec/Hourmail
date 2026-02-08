@@ -2,14 +2,69 @@
 definePageMeta({ layout: 'mail', middleware: 'auth' })
 
 const { messages, totalMessages, loadingMessages, selectedMessages, toggleSelect, selectAll, clearSelection, toggleStarred, deleteEmail } = useMail()
-const loading = ref(true)
+const loading = ref(false)
+
+type StarredResult = { messages: { uid: number; seq: number; messageId?: string; subject: string; from: { name: string; address: string }[]; to: { name: string; address: string }[]; date: string; flags: string[]; preview: string }[]; total: number }
+
+const STARRED_CACHE_KEY = 'hourinbox_starred_cache'
+
+// Track removed UIDs so background refresh doesn't re-add them
+const removedUids = new Set<number>()
+let bgAbort: AbortController | null = null
+
+function getCachedStarred(): StarredResult | null {
+  try {
+    const stored = sessionStorage.getItem(STARRED_CACHE_KEY)
+    if (!stored) return null
+    const parsed = JSON.parse(stored)
+    if (Date.now() - parsed._ts > 120000) return null
+    return parsed
+  } catch { return null }
+}
+
+function setCachedStarred(data: StarredResult) {
+  try {
+    sessionStorage.setItem(STARRED_CACHE_KEY, JSON.stringify({ ...data, _ts: Date.now() }))
+  } catch { /* ignore */ }
+}
+
+function clearStarredCache() {
+  try { sessionStorage.removeItem(STARRED_CACHE_KEY) } catch { /* ignore */ }
+}
 
 async function fetchStarred() {
+  // Cancel any previous background refresh
+  bgAbort?.abort()
+  bgAbort = null
+
+  const cached = getCachedStarred()
+  if (cached) {
+    // Filter out any UIDs we've already removed this session
+    const filtered = cached.messages.filter(m => !removedUids.has(m.uid))
+    messages.value = filtered
+    totalMessages.value = filtered.length
+
+    // Background refresh with abort support
+    const controller = new AbortController()
+    bgAbort = controller
+    $fetch<StarredResult>('/api/mail/starred', { signal: controller.signal }).then((data) => {
+      // Filter out locally-removed UIDs from server response
+      const fresh = data.messages.filter(m => !removedUids.has(m.uid))
+      messages.value = fresh
+      totalMessages.value = fresh.length
+      setCachedStarred({ messages: fresh, total: fresh.length })
+      bgAbort = null
+    }).catch(() => {})
+    return
+  }
+
   loading.value = true
   try {
-    const data = await $fetch<{ messages: { uid: number; seq: number; messageId?: string; subject: string; from: { name: string; address: string }[]; to: { name: string; address: string }[]; date: string; flags: string[]; preview: string }[]; total: number }>('/api/mail/starred')
-    messages.value = data.messages
-    totalMessages.value = data.total
+    const data = await $fetch<StarredResult>('/api/mail/starred')
+    const filtered = data.messages.filter(m => !removedUids.has(m.uid))
+    messages.value = filtered
+    totalMessages.value = filtered.length
+    setCachedStarred({ messages: filtered, total: filtered.length })
   } finally {
     loading.value = false
   }
@@ -17,6 +72,11 @@ async function fetchStarred() {
 
 onMounted(() => {
   fetchStarred()
+})
+
+onUnmounted(() => {
+  bgAbort?.abort()
+  removedUids.clear()
 })
 
 function formatDate(dateStr: string) {
@@ -39,16 +99,29 @@ function isRead(flags: string[]) {
   return flags?.includes('\\Seen')
 }
 
-async function handleStarClick(e: Event, uid: number) {
+function handleStarClick(e: Event, uid: number) {
   e.preventDefault()
   e.stopPropagation()
-  await toggleStarred(uid, false, 'INBOX')
-  // Remove from local list since it's no longer starred
+
+  // Cancel any in-flight background refresh so it can't overwrite our removal
+  bgAbort?.abort()
+  bgAbort = null
+
+  // Track this UID so no future fetch can re-add it
+  removedUids.add(uid)
+
+  // Instant removal from list
   messages.value = messages.value.filter(m => m.uid !== uid)
   totalMessages.value = Math.max(0, totalMessages.value - 1)
+
+  // Update sessionStorage cache to match
+  setCachedStarred({ messages: messages.value, total: totalMessages.value })
+
+  // Fire IMAP flag update in background
+  toggleStarred(uid, false, 'INBOX')
 }
 
-async function handleCheckboxClick(e: Event, uid: number) {
+function handleCheckboxClick(e: Event, uid: number) {
   e.preventDefault()
   e.stopPropagation()
   toggleSelect(uid)

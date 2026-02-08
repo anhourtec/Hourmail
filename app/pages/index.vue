@@ -1,10 +1,15 @@
 <script setup lang="ts">
 definePageMeta({ middleware: 'auth' })
 
-// Redirect to inbox if authenticated, login if not
+// Redirect to last route (or inbox) if authenticated, login if not
 const { user } = useAuth()
 if (user.value) {
-  navigateTo('/inbox')
+  let target = '/inbox'
+  if (import.meta.client) {
+    const lastRoute = sessionStorage.getItem('hourinbox_last_route')
+    if (lastRoute && lastRoute !== '/') target = lastRoute
+  }
+  navigateTo(target)
 } else {
   navigateTo('/login')
 }

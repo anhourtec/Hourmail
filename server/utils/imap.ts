@@ -400,6 +400,45 @@ export async function getMessage(
   }
 }
 
+export async function getAttachment(
+  session: SessionData,
+  password: string,
+  folder: string,
+  uid: number,
+  filename: string
+): Promise<{ content: Buffer; contentType: string; filename: string } | null> {
+  const client = createImapClient(session, password)
+  await client.connect()
+
+  try {
+    const lock = await client.getMailboxLock(folder)
+    try {
+      const msg = await client.fetchOne(String(uid), {
+        uid: true,
+        source: true
+      }, { uid: true })
+
+      if (!msg || !msg.source) return null
+
+      const parsed: ParsedMail = await simpleParser(msg.source)
+      const att = (parsed.attachments || []).find(
+        (a) => a.filename === filename
+      )
+      if (!att) return null
+
+      return {
+        content: att.content,
+        contentType: att.contentType || 'application/octet-stream',
+        filename: att.filename || 'attachment'
+      }
+    } finally {
+      lock.release()
+    }
+  } finally {
+    await client.logout()
+  }
+}
+
 export async function findUidByMessageId(
   session: SessionData,
   password: string,
@@ -599,8 +638,9 @@ export async function getDraftContent(
 export async function appendDraft(
   session: SessionData,
   password: string,
-  rawMessage: string | Buffer
-): Promise<boolean> {
+  rawMessage: string | Buffer,
+  replaceUid?: number
+): Promise<{ uid: number; folder: string }> {
   const client = createImapClient(session, password)
   await client.connect()
 
@@ -609,8 +649,20 @@ export async function appendDraft(
     const mailboxes = await client.list()
     const draftsFolder = mailboxes.find(m => m.specialUse === '\\Drafts')?.path || 'Drafts'
 
-    await client.append(draftsFolder, rawMessage, ['\\Draft', '\\Seen'])
-    return true
+    // Delete the previous draft version if replacing
+    if (replaceUid) {
+      const lock = await client.getMailboxLock(draftsFolder)
+      try {
+        await client.messageDelete(String(replaceUid), { uid: true })
+      } catch {
+        // Ignore — old draft may already be gone
+      } finally {
+        lock.release()
+      }
+    }
+
+    const result = await client.append(draftsFolder, rawMessage, ['\\Draft', '\\Seen'])
+    return { uid: result?.uid || 0, folder: draftsFolder }
   } finally {
     await client.logout()
   }
