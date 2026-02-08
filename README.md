@@ -158,6 +158,14 @@ hourinbox/
 └── .env.example
 ```
 
+## Useful Commands
+
+### Delete a registered organization
+
+```bash
+npx prisma db execute --schema prisma/schema.prisma --stdin <<< "DELETE FROM organizations WHERE domain = 'example.com';"
+```
+
 ## Contributing
 
 Contributions are welcome and appreciated! This is an open-source project, and collaborators are encouraged to get involved.
