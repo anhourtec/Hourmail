@@ -129,7 +129,7 @@ async function handleRegister() {
                 <UFormField label="Host" required class="col-span-2">
                   <UInput
                     v-model="imapHost"
-                    placeholder="imap.purelymail.com"
+                    placeholder="imap.gmail.com"
                     size="lg"
                     class="w-full"
                     required
@@ -156,7 +156,7 @@ async function handleRegister() {
                 <UFormField label="Host" required class="col-span-2">
                   <UInput
                     v-model="smtpHost"
-                    placeholder="smtp.purelymail.com"
+                    placeholder="smtp.gmail.com"
                     size="lg"
                     class="w-full"
                     required
