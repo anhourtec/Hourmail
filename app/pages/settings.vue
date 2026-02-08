@@ -13,7 +13,7 @@ onMounted(() => {
 
 function handleCacheToggle(enabled: boolean) {
   setClientCacheEnabled(enabled)
-  const cookie = useCookie('hourinbox_cache_enabled', { default: () => true, maxAge: 60 * 60 * 24 })
+  const cookie = useCookie('hourmail_cache_enabled', { default: () => true, maxAge: 60 * 60 * 24 })
   cookie.value = enabled
 }
 

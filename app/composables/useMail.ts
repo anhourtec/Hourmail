@@ -57,9 +57,9 @@ const messageDetailCache = new Map<string, { message: MailMessageFull, fetchedAt
 const clientCacheEnabled = ref(true)
 let cacheInitialized = false
 
-const SESSION_CACHE_KEY = 'hourinbox_msg_cache'
-const SESSION_FOLDERS_KEY = 'hourinbox_folders'
-const SESSION_STATE_KEY = 'hourinbox_state'
+const SESSION_CACHE_KEY = 'hourmail_msg_cache'
+const SESSION_FOLDERS_KEY = 'hourmail_folders'
+const SESSION_STATE_KEY = 'hourmail_state'
 const CACHE_MAX_AGE = 5 * 60 * 1000 // 5 minutes
 
 function persistCacheToSession() {
@@ -146,7 +146,7 @@ function restoreStateFromSession() {
 export function useMail() {
   // Initialize cache setting and restore session on first call
   if (!cacheInitialized && import.meta.client) {
-    const cookie = useCookie<boolean>('hourinbox_cache_enabled', { default: () => true })
+    const cookie = useCookie<boolean>('hourmail_cache_enabled', { default: () => true })
     clientCacheEnabled.value = cookie.value !== false
 
     // Restore persisted data from sessionStorage for instant page load
@@ -190,9 +190,9 @@ export function useMail() {
       sessionStorage.removeItem(SESSION_CACHE_KEY)
       sessionStorage.removeItem(SESSION_FOLDERS_KEY)
       sessionStorage.removeItem(SESSION_STATE_KEY)
-      sessionStorage.removeItem('hourinbox_starred_cache')
-      localStorage.removeItem('hourinbox_compose_draft')
-      localStorage.removeItem('hourinbox_recent_searches')
+      sessionStorage.removeItem('hourmail_starred_cache')
+      localStorage.removeItem('hourmail_compose_draft')
+      localStorage.removeItem('hourmail_recent_searches')
     }
   }
 
@@ -547,7 +547,7 @@ export function useMail() {
     }
 
     // Also preload starred messages into sessionStorage
-    const STARRED_CACHE_KEY = 'hourinbox_starred_cache'
+    const STARRED_CACHE_KEY = 'hourmail_starred_cache'
     try {
       const existing = sessionStorage.getItem(STARRED_CACHE_KEY)
       if (!existing || Date.now() - JSON.parse(existing)._ts > 120000) {

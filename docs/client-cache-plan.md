@@ -35,7 +35,7 @@ let cacheInitialized = false
 Initialize from cookie inside `useMail()` (first call only):
 ```ts
 if (!cacheInitialized && import.meta.client) {
-  const cookie = useCookie<boolean>('hourinbox_cache_enabled', { default: () => true })
+  const cookie = useCookie<boolean>('hourmail_cache_enabled', { default: () => true })
   clientCacheEnabled.value = cookie.value
   cacheInitialized = true
 }
@@ -91,7 +91,7 @@ function updateCurrentPageCache() {
 ### Step 5: Settings UI
 
 Add a "Performance" section to `settings.vue`:
-- **USwitch** for "Client-side folder cache" — persists to `hourinbox_cache_enabled` cookie (24h maxAge)
+- **USwitch** for "Client-side folder cache" — persists to `hourmail_cache_enabled` cookie (24h maxAge)
 - **"Clear cache" button** — calls `clearMessageCache()`
 - Description: "Cache messages in memory for instant folder switching. Data is cleared on logout or page refresh."
 

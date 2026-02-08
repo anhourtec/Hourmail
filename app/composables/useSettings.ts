@@ -16,7 +16,7 @@ const settings = reactive<UserSettings>({ ...defaults })
 let settingsLoadedFor = ''
 
 function getStorageKey(email: string) {
-  return `hourinbox_settings_${email}`
+  return `hourmail_settings_${email}`
 }
 
 export function useSettings() {

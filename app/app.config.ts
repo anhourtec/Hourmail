@@ -1,6 +1,6 @@
 export default defineAppConfig({
   brand: {
-    name: 'HourInbox',
+    name: 'HourMail',
     logo: '/logo.png',
     author: 'Anhourtec'
   },

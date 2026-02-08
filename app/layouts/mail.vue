@@ -33,7 +33,7 @@ const recentSearches = ref<string[]>([])
 function loadRecentSearches() {
   if (import.meta.client) {
     try {
-      const stored = localStorage.getItem('hourinbox_recent_searches')
+      const stored = localStorage.getItem('hourmail_recent_searches')
       if (stored) recentSearches.value = JSON.parse(stored)
     } catch { /* ignore */ }
   }
@@ -44,14 +44,14 @@ function saveRecentSearch(query: string) {
   const trimmed = query.trim()
   recentSearches.value = [trimmed, ...recentSearches.value.filter(s => s !== trimmed)].slice(0, MAX_RECENT)
   if (import.meta.client) {
-    localStorage.setItem('hourinbox_recent_searches', JSON.stringify(recentSearches.value))
+    localStorage.setItem('hourmail_recent_searches', JSON.stringify(recentSearches.value))
   }
 }
 
 function clearRecentSearches() {
   recentSearches.value = []
   if (import.meta.client) {
-    localStorage.removeItem('hourinbox_recent_searches')
+    localStorage.removeItem('hourmail_recent_searches')
   }
 }
 

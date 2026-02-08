@@ -6,13 +6,15 @@ export default defineNuxtRouteMiddleware(async (to) => {
   }
 
   // Public routes that don't require auth
-  const publicRoutes = ['/login', '/register']
+  const publicRoutes = ['/login', '/register', '/', '/home', '/features', '/support']
 
   if (!user.value && !publicRoutes.includes(to.path)) {
     return navigateTo({ path: '/login', query: { redirect: to.fullPath } })
   }
 
-  if (user.value && publicRoutes.includes(to.path) && to.query.addAccount !== 'true') {
+  // Redirect authenticated users away from auth pages (not landing pages)
+  const authRoutes = ['/login', '/register']
+  if (user.value && authRoutes.includes(to.path) && to.query.addAccount !== 'true') {
     const redirect = to.query.redirect as string
     const target = redirect && redirect !== '/' && !publicRoutes.includes(redirect) ? redirect : '/inbox'
     return navigateTo(target)

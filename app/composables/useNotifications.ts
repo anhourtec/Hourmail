@@ -55,7 +55,7 @@ export function useNotifications() {
     const notification = new Notification(title, {
       body,
       icon: '/favicon.ico',
-      tag: 'hourinbox-new-email'
+      tag: 'hourmail-new-email'
     })
 
     notification.onclick = () => {

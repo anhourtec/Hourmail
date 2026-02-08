@@ -9,7 +9,7 @@ interface ComposeData {
   inReplyTo?: string
 }
 
-const DRAFT_STORAGE_KEY = 'hourinbox_compose_draft'
+const DRAFT_STORAGE_KEY = 'hourmail_compose_draft'
 
 const composeState = ref<ComposeState>('closed')
 const composeData = reactive<ComposeData>({

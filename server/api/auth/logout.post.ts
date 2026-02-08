@@ -1,5 +1,5 @@
 export default defineEventHandler(async (event) => {
-  const token = getCookie(event, 'hourinbox_session')
+  const token = getCookie(event, 'hourmail_session')
   if (token) {
     await redis.del(`password:${token}`)
   }

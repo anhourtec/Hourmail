@@ -1,4 +1,4 @@
-# HourInbox — Project Plan
+# HourMail — Project Plan
 
 ## Vision
 
@@ -15,7 +15,7 @@ Many organizations use third-party email servers (Gmail, Dovecot, Postfix, etc.)
 - Lacking modern features (search, threading, keyboard shortcuts)
 - Poor user experience compared to Gmail/Outlook
 
-HourInbox solves this by providing a modern web frontend that connects to any standard IMAP/SMTP server.
+HourMail solves this by providing a modern web frontend that connects to any standard IMAP/SMTP server.
 
 ---
 

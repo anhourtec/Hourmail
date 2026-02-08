@@ -4,7 +4,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 401, message: 'Not authenticated' })
   }
 
-  const token = getCookie(event, 'hourinbox_session')!
+  const token = getCookie(event, 'hourmail_session')!
   const encryptedPassword = await redis.get(`password:${token}`)
   if (!encryptedPassword) {
     throw createError({ statusCode: 401, message: 'Session expired' })

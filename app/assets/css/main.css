@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "@nuxt/ui";
+@import "./landing.css";
 
 @theme static {
   --font-sans: 'Inter', 'Public Sans', system-ui, sans-serif;

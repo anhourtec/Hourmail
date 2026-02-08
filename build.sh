@@ -2,7 +2,7 @@
 set -e
 
 echo "========================================="
-echo "  HourInbox — Build & Deploy"
+echo "  HourMail — Build & Deploy"
 echo "========================================="
 echo ""
 
@@ -38,8 +38,8 @@ source .env
 
 APP_PORT=${NUXT_PORT:-3847}
 
-# Stop HourInbox containers if already running
-for container in hourinbox-app hourinbox-postgres hourinbox-redis; do
+# Stop HourMail containers if already running
+for container in hourmail-app hourmail-postgres hourmail-redis; do
   if docker ps -q -f name="^${container}$" | grep -q .; then
     echo "Stopping $container..."
     docker stop "$container" && docker rm "$container"
@@ -55,7 +55,7 @@ docker compose up -d --build
 
 echo ""
 echo "========================================="
-echo "  HourInbox is running!"
+echo "  HourMail is running!"
 echo "========================================="
 echo ""
 echo "  App:        http://localhost:$APP_PORT"

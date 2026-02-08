@@ -1,4 +1,4 @@
-# HourInbox
+# HourMail
 
 **A modern, web-based IMAP email client for organizations** — built by [Anhourtec](https://anhourtec.com)
 
@@ -8,9 +8,9 @@
 
 ---
 
-## What is HourInbox?
+## What is HourMail?
 
-HourInbox is a **free, open-source, web-based email client** that connects to any IMAP/SMTP email server. It provides a modern Gmail/Outlook-style interface for organizations stuck with outdated email clients like Roundcube, SquirrelMail, or clunky mobile interfaces.
+HourMail is a **free, open-source, web-based email client** that connects to any IMAP/SMTP email server. It provides a modern Gmail/Outlook-style interface for organizations stuck with outdated email clients like Roundcube, SquirrelMail, or clunky mobile interfaces.
 
 **One-time setup, zero friction for users:**
 
@@ -39,25 +39,38 @@ HourInbox is a **free, open-source, web-based email client** that connects to an
 | Email        | ImapFlow (IMAP) + Nodemailer (SMTP) |
 | Deployment   | Docker + Docker Compose           |
 
-## Quick Start
+## Deployment
 
 ### Prerequisites
 
 - [Docker](https://docs.docker.com/get-docker/) & [Docker Compose](https://docs.docker.com/compose/install/)
-- [Node.js](https://nodejs.org/) 20+ (for local development)
-- [npm](https://www.npmjs.com/) 10+ (comes with Node.js)
+- A server or VPS (Ubuntu, Debian, etc.)
 
-### 1. Clone and configure
+### Option 1: One-Command Deploy (Recommended)
 
 ```bash
-git clone https://github.com/anhourtec/hourinbox.git
-cd hourinbox
+git clone https://github.com/anhourtec/hourmail.git
+cd hourmail
+chmod +x build.sh
+./build.sh
+```
+
+On the first run, `build.sh` will:
+- Create a `.env` file from `.env.example`
+- Generate a random session secret automatically
+- Exit so you can review the `.env` file
+
+After reviewing `.env`, run `./build.sh` again to build and start all containers.
+
+### Option 2: Docker Compose
+
+```bash
+git clone https://github.com/anhourtec/hourmail.git
+cd hourmail
 cp .env.example .env
 ```
 
-Edit `.env` with your settings (defaults work out of the box for local development).
-
-### 2. Start with Docker
+Edit `.env` with your settings, then:
 
 ```bash
 docker compose up -d
@@ -65,11 +78,33 @@ docker compose up -d
 
 This starts PostgreSQL (port `5487`), Redis (port `6391`), and the app (port `3847`).
 
-### 3. Open the app
+### Environment Variables
 
-Visit [http://localhost:3847](http://localhost:3847) and register your first organization.
+The `.env.example` file contains all required configuration:
 
-### Local Development (without Docker)
+```env
+# Database (PostgreSQL)
+POSTGRES_USER=hourmail
+POSTGRES_PASSWORD=hourmail_secret
+POSTGRES_DB=hourmail
+DATABASE_URL=postgresql://hourmail:hourmail_secret@<SERVER_IP>:5487/hourmail
+
+# Redis
+REDIS_PASSWORD=redis_secret
+REDIS_URL=redis://default:redis_secret@<SERVER_IP>:6391
+
+# App
+NUXT_PORT=3847
+NUXT_SESSION_SECRET=change-me-to-a-random-64-char-string
+```
+
+Replace `<SERVER_IP>` with your server's IP address (or `localhost` for local development).
+
+### After Deployment
+
+Visit `http://your-server:3847` and register your first organization.
+
+## Local Development
 
 ```bash
 npm install
@@ -131,12 +166,12 @@ Any user from a registered domain visits `/login` and enters:
 - Email address (e.g., `nsingh@anhourtec.com`)
 - Password (their existing email password)
 
-HourInbox extracts the domain, looks up the IMAP settings, authenticates directly against the mail server, and creates a session. **No passwords are ever stored.**
+HourMail extracts the domain, looks up the IMAP settings, authenticates directly against the mail server, and creates a session. **No passwords are ever stored.**
 
 ## Project Structure
 
 ```
-hourinbox/
+hourmail/
 ├── app/
 │   ├── assets/css/        # Tailwind CSS
 │   ├── components/        # Vue components
@@ -151,10 +186,9 @@ hourinbox/
 │   └── utils/             # Server utilities (IMAP, SMTP, Redis)
 ├── prisma/
 │   └── schema.prisma      # Database schema
-├── docs/
-│   └── plan.md            # Architecture & roadmap
 ├── docker-compose.yml
 ├── Dockerfile
+├── build.sh               # One-command deploy script
 └── .env.example
 ```
 
@@ -176,9 +210,19 @@ Contributions are welcome and appreciated! This is an open-source project, and c
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
+## Contributors
+
+<a href="https://github.com/anhourtec/hourmail/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=anhourtec/hourmail" />
+</a>
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=anhourtec/Hourmail&type=date&legend=top-left)](https://www.star-history.com/#anhourtec/Hourmail&type=date&legend=top-left)
+
 ## Disclaimer (Self-Hosted)
 
-If you self-host HourInbox, you are solely responsible for securing your own infrastructure, data, and credentials. HourInbox is provided "as is" without warranty. Anhourtec is not responsible for any data loss, security breaches, or issues arising from self-hosted deployments. See the [LICENSE](LICENSE) for full terms.
+If you self-host HourMail, you are solely responsible for securing your own infrastructure, data, and credentials. HourMail is provided "as is" without warranty. Anhourtec is not responsible for any data loss, security breaches, or issues arising from self-hosted deployments. See the [LICENSE](LICENSE) for full terms.
 
 ## License
 

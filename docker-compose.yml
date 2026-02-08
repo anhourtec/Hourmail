@@ -1,16 +1,16 @@
-name: hourinbox
+name: hourmail
 
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: hourinbox-postgres
+    container_name: hourmail-postgres
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
     volumes:
-      - hourinbox-pgdata:/var/lib/postgresql/data
+      - hourmail-pgdata:/var/lib/postgresql/data
     ports:
       - "5487:5432"
     healthcheck:
@@ -19,24 +19,24 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - hourinbox-net
+      - hourmail-net
 
   redis:
     image: redis:7-alpine
-    container_name: hourinbox-redis
+    container_name: hourmail-redis
     restart: unless-stopped
     command: redis-server --requirepass ${REDIS_PASSWORD}
     ports:
       - "6391:6379"
     volumes:
-      - hourinbox-redis:/data
+      - hourmail-redis:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
       timeout: 5s
       retries: 5
     networks:
-      - hourinbox-net
+      - hourmail-net
 
   app:
     build:
@@ -44,7 +44,7 @@ services:
       dockerfile: Dockerfile
       args:
         DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
-    container_name: hourinbox-app
+    container_name: hourmail-app
     restart: unless-stopped
     ports:
       - "${NUXT_PORT}:${NUXT_PORT}"
@@ -63,12 +63,12 @@ services:
       redis:
         condition: service_healthy
     networks:
-      - hourinbox-net
+      - hourmail-net
 
 volumes:
-  hourinbox-pgdata:
-  hourinbox-redis:
+  hourmail-pgdata:
+  hourmail-redis:
 
 networks:
-  hourinbox-net:
+  hourmail-net:
     driver: bridge

@@ -2,8 +2,8 @@ import { randomBytes, createCipheriv, createDecipheriv, createHash } from 'crypt
 import type { H3Event } from 'h3'
 import { getCookie, setCookie, deleteCookie } from 'h3'
 
-const SESSION_COOKIE = 'hourinbox_session'
-const ACCOUNTS_COOKIE = 'hourinbox_accounts'
+const SESSION_COOKIE = 'hourmail_session'
+const ACCOUNTS_COOKIE = 'hourmail_accounts'
 const SESSION_TTL = 60 * 60 * 24 // 24 hours
 
 export interface SessionData {

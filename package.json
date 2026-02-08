@@ -1,5 +1,5 @@
 {
-  "name": "hourinbox",
+  "name": "hourmail",
   "private": true,
   "type": "module",
   "description": "Modern web-based IMAP email client for organizations — built by Anhourtec",

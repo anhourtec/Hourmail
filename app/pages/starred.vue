@@ -6,7 +6,7 @@ const loading = ref(false)
 
 type StarredResult = { messages: { uid: number, seq: number, messageId?: string, subject: string, from: { name: string, address: string }[], to: { name: string, address: string }[], date: string, flags: string[], preview: string }[], total: number }
 
-const STARRED_CACHE_KEY = 'hourinbox_starred_cache'
+const STARRED_CACHE_KEY = 'hourmail_starred_cache'
 
 // Track removed UIDs so background refresh doesn't re-add them
 const removedUids = new Set<number>()
