@@ -502,6 +502,35 @@ export async function updateMessageFlags(
   }
 }
 
+export async function updateMessageFlagsBatch(
+  session: SessionData,
+  password: string,
+  folder: string,
+  uids: number[],
+  flags: { add?: string[], remove?: string[] }
+): Promise<void> {
+  if (uids.length === 0) return
+  const client = createImapClient(session, password)
+  await client.connect()
+
+  try {
+    const lock = await client.getMailboxLock(folder)
+    try {
+      const uidRange = uids.join(',')
+      if (flags.add?.length) {
+        await client.messageFlagsAdd(uidRange, flags.add, { uid: true })
+      }
+      if (flags.remove?.length) {
+        await client.messageFlagsRemove(uidRange, flags.remove, { uid: true })
+      }
+    } finally {
+      lock.release()
+    }
+  } finally {
+    await client.logout()
+  }
+}
+
 export interface CollectedContact {
   name: string
   address: string

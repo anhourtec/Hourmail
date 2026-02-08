@@ -295,53 +295,93 @@ const allSelected = computed(() =>
         <NuxtLink
           v-if="!isDraft(msg.flags)"
           :to="`/inbox/${encodeMessageId(msg.messageId) || msg.uid}?folder=${encodeURIComponent(folderPath)}`"
-          class="flex items-center gap-2 flex-1 min-w-0 py-2 pr-3"
+          class="flex-1 min-w-0 py-2 pr-3"
         >
-          <span
-            class="w-32 sm:w-44 truncate shrink-0 text-sm"
-            :class="isRead(msg.flags) ? 'text-muted' : 'font-semibold'"
-          >
-            {{ senderName(msg.from) }}
-          </span>
-
-          <div class="flex-1 min-w-0 flex items-baseline gap-1">
+          <!-- Desktop: single row -->
+          <div class="hidden sm:flex items-center gap-2">
             <span
-              class="truncate text-sm"
+              class="w-44 truncate shrink-0 text-sm"
+              :class="isRead(msg.flags) ? 'text-muted' : 'font-semibold'"
+            >
+              {{ senderName(msg.from) }}
+            </span>
+            <div class="flex-1 min-w-0 flex items-baseline gap-1">
+              <span
+                class="truncate text-sm"
+                :class="isRead(msg.flags) ? 'text-muted' : 'font-medium'"
+              >
+                {{ msg.subject || '(no subject)' }}
+              </span>
+            </div>
+            <span
+              class="text-xs shrink-0 tabular-nums"
+              :class="isRead(msg.flags) ? 'text-muted' : 'font-medium'"
+            >
+              {{ formatDate(msg.date) }}
+            </span>
+          </div>
+          <!-- Mobile: stacked rows -->
+          <div class="sm:hidden">
+            <div class="flex items-center gap-1">
+              <span
+                class="flex-1 truncate text-sm"
+                :class="isRead(msg.flags) ? 'text-muted' : 'font-semibold'"
+              >
+                {{ senderName(msg.from) }}
+              </span>
+              <span
+                class="text-[11px] shrink-0 tabular-nums"
+                :class="isRead(msg.flags) ? 'text-muted' : 'font-medium'"
+              >
+                {{ formatDate(msg.date) }}
+              </span>
+            </div>
+            <span
+              class="block truncate text-xs mt-0.5"
               :class="isRead(msg.flags) ? 'text-muted' : 'font-medium'"
             >
               {{ msg.subject || '(no subject)' }}
             </span>
           </div>
-
-          <span
-            class="text-xs shrink-0 tabular-nums"
-            :class="isRead(msg.flags) ? 'text-muted' : 'font-medium'"
-          >
-            {{ formatDate(msg.date) }}
-          </span>
         </NuxtLink>
 
         <!-- Draft: click opens compose -->
         <button
           v-else
           type="button"
-          class="flex items-center gap-2 flex-1 min-w-0 py-2 pr-3 text-left"
+          class="flex-1 min-w-0 py-2 pr-3 text-left"
           @click="handleDraftClick(msg)"
         >
-          <span class="w-32 sm:w-44 truncate shrink-0 text-sm">
-            <span class="text-red-500 font-medium">Draft</span>
-            <span class="text-muted ml-1">to {{ recipientName(msg.to) }}</span>
-          </span>
-
-          <div class="flex-1 min-w-0 flex items-baseline gap-1">
-            <span class="truncate text-sm text-muted">
+          <!-- Desktop: single row -->
+          <div class="hidden sm:flex items-center gap-2">
+            <span class="w-44 truncate shrink-0 text-sm">
+              <span class="text-red-500 font-medium">Draft</span>
+              <span class="text-muted ml-1">to {{ recipientName(msg.to) }}</span>
+            </span>
+            <div class="flex-1 min-w-0 flex items-baseline gap-1">
+              <span class="truncate text-sm text-muted">
+                {{ msg.subject || '(no subject)' }}
+              </span>
+            </div>
+            <span class="text-xs shrink-0 tabular-nums text-muted">
+              {{ formatDate(msg.date) }}
+            </span>
+          </div>
+          <!-- Mobile: stacked rows -->
+          <div class="sm:hidden">
+            <div class="flex items-center gap-1">
+              <span class="flex-1 truncate text-sm">
+                <span class="text-red-500 font-medium">Draft</span>
+                <span class="text-muted ml-1">to {{ recipientName(msg.to) }}</span>
+              </span>
+              <span class="text-[11px] shrink-0 tabular-nums text-muted">
+                {{ formatDate(msg.date) }}
+              </span>
+            </div>
+            <span class="block truncate text-xs text-muted mt-0.5">
               {{ msg.subject || '(no subject)' }}
             </span>
           </div>
-
-          <span class="text-xs shrink-0 tabular-nums text-muted">
-            {{ formatDate(msg.date) }}
-          </span>
         </button>
 
         <!-- Delete button for drafts -->

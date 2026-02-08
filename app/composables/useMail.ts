@@ -481,6 +481,57 @@ export function useMail() {
     invalidateFolderCache(folder)
   }
 
+  async function markJunk(uid: number, folder: string = 'INBOX') {
+    await $fetch('/api/mail/junk', {
+      method: 'POST',
+      body: { uid, folder }
+    })
+    // Remove from local state immediately
+    messages.value = messages.value.filter(m => m.uid !== uid)
+    totalMessages.value = Math.max(0, totalMessages.value - 1)
+    adjustFolderCount(folder, -1)
+    invalidateFolderCache(folder)
+  }
+
+  async function bulkToggleRead(uids: number[], isRead: boolean, folder: string = 'INBOX') {
+    // Optimistic: update UI first
+    for (const uid of uids) {
+      const msg = messages.value.find(m => m.uid === uid)
+      if (msg) {
+        if (isRead && !msg.flags.includes('\\Seen')) {
+          msg.flags.push('\\Seen')
+        } else if (!isRead) {
+          msg.flags = msg.flags.filter(f => f !== '\\Seen')
+        }
+      }
+    }
+    updateCurrentPageCache()
+
+    // Single batch API call
+    $fetch('/api/mail/messages/batch-flags', {
+      method: 'PUT',
+      body: {
+        uids,
+        folder,
+        addFlags: isRead ? ['\\Seen'] : undefined,
+        removeFlags: !isRead ? ['\\Seen'] : undefined
+      }
+    }).catch(() => {
+      // Revert on failure
+      for (const uid of uids) {
+        const msg = messages.value.find(m => m.uid === uid)
+        if (msg) {
+          if (isRead) {
+            msg.flags = msg.flags.filter(f => f !== '\\Seen')
+          } else if (!msg.flags.includes('\\Seen')) {
+            msg.flags.push('\\Seen')
+          }
+        }
+      }
+      updateCurrentPageCache()
+    })
+  }
+
   async function deleteEmail(uid: number, folder: string = 'INBOX') {
     // Optimistic: remove from UI first
     const removedMsg = messages.value.find(m => m.uid === uid)
@@ -602,8 +653,10 @@ export function useMail() {
     clearSearch,
     sendEmail,
     toggleRead,
+    bulkToggleRead,
     toggleStarred,
     archiveEmail,
+    markJunk,
     deleteEmail,
     toggleSelect,
     selectAll,

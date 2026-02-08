@@ -34,7 +34,7 @@ function playTone(frequency: number, duration: number, type: OscillatorType = 's
 
 export function useNotifications() {
   const { settings } = useSettings()
-  const { folders } = useMail()
+  const { folders, currentFolder, currentPage, fetchMessages } = useMail()
 
   const notificationPermission = ref<NotificationPermission>(
     import.meta.client && 'Notification' in window ? Notification.permission : 'default'
@@ -104,6 +104,11 @@ export function useNotifications() {
           `You have ${newCount} new ${newCount === 1 ? 'message' : 'messages'}`
         )
         playNewEmailSound()
+
+        // Auto-refresh the message list if viewing INBOX
+        if (currentFolder.value === 'INBOX') {
+          fetchMessages('INBOX', currentPage.value, true)
+        }
       }
 
       lastKnownUnseen = currentUnseen

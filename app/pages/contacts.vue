@@ -1,8 +1,11 @@
 <script setup lang="ts">
 definePageMeta({ layout: 'mail', middleware: 'auth' })
 
-const { contacts, loading, fetchContacts } = useContacts()
+const toast = useToast()
+const { contacts, loading, fetchContacts, exportContacts, importContacts } = useContacts()
 const searchQuery = ref('')
+const fileInput = ref<HTMLInputElement | null>(null)
+const exporting = ref(false)
 
 const filteredContacts = computed(() => {
   if (!searchQuery.value) return contacts.value
@@ -11,6 +14,31 @@ const filteredContacts = computed(() => {
     c => c.name.toLowerCase().includes(q) || c.address.toLowerCase().includes(q)
   )
 })
+
+async function handleExport() {
+  exporting.value = true
+  try {
+    await exportContacts()
+  } catch {
+    toast.add({ title: 'Failed to export contacts', color: 'error' })
+  } finally {
+    exporting.value = false
+  }
+}
+
+async function handleFileSelected(e: Event) {
+  const input = e.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file) return
+  input.value = '' // reset so same file can be re-selected
+
+  try {
+    const count = await importContacts(file)
+    toast.add({ title: `Imported ${count} contact${count === 1 ? '' : 's'}`, color: 'success' })
+  } catch {
+    toast.add({ title: 'Failed to import contacts', color: 'error' })
+  }
+}
 
 onMounted(() => {
   fetchContacts(true)
@@ -24,15 +52,42 @@ onMounted(() => {
         <h1 class="text-xl font-bold">
           Contacts
         </h1>
-        <UButton
-          icon="i-lucide-refresh-cw"
-          variant="ghost"
-          color="neutral"
-          size="xs"
-          :loading="loading"
-          @click="fetchContacts(true)"
-        />
+        <div class="flex items-center gap-1">
+          <UButton
+            icon="i-lucide-upload"
+            variant="ghost"
+            color="neutral"
+            size="xs"
+            title="Import contacts"
+            @click="fileInput?.click()"
+          />
+          <UButton
+            icon="i-lucide-download"
+            variant="ghost"
+            color="neutral"
+            size="xs"
+            :loading="exporting"
+            title="Export contacts"
+            @click="handleExport"
+          />
+          <UButton
+            icon="i-lucide-refresh-cw"
+            variant="ghost"
+            color="neutral"
+            size="xs"
+            :loading="loading"
+            @click="fetchContacts(true)"
+          />
+        </div>
       </div>
+
+      <input
+        ref="fileInput"
+        type="file"
+        accept=".vcf,.csv"
+        class="hidden"
+        @change="handleFileSelected"
+      >
 
       <p class="text-sm text-muted mb-4">
         Addresses collected from your sent and received emails.

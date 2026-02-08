@@ -3,7 +3,7 @@ const { user } = useAuth()
 const { composeState, composeData, draftSavedAt, draftSource, closeCompose, discardCompose, clearDraft, toggleMinimize, toggleMaximize } = useCompose()
 const { addToOutbox } = useOutbox()
 const { deleteEmail } = useMail()
-const { fetchContacts, searchContacts } = useContacts()
+const { fetchContacts, searchContacts, addSentContacts } = useContacts()
 const toast = useToast()
 
 const showCc = ref(false)
@@ -176,6 +176,7 @@ async function handleSend() {
         formData.append('attachments', file)
       }
       await $fetch('/api/mail/send', { method: 'POST', body: formData })
+      addSentContacts(composeData.to, composeData.cc, composeData.bcc)
       toast.add({ title: 'Message sent', color: 'success', icon: 'i-lucide-check' })
       // Delete the original draft from IMAP if editing one
       if (hadDraftSource) await deleteDraftSource()
@@ -202,6 +203,7 @@ async function handleSend() {
       html: composeData.body || undefined,
       inReplyTo: composeData.inReplyTo
     })
+    addSentContacts(composeData.to, composeData.cc, composeData.bcc)
     toast.add({ title: 'Queued for sending', color: 'info', icon: 'i-lucide-send' })
     // Delete the original draft from IMAP if editing one
     if (hadDraftSource) deleteDraftSource()
@@ -221,13 +223,13 @@ const headerLabel = computed(() => {
     <!-- Normal / Maximized -->
     <div
       v-if="composeState !== 'closed'"
-      class="fixed z-[100] flex flex-col bg-default border border-default shadow-2xl overflow-hidden"
+      class="fixed z-100 flex flex-col bg-default border border-default shadow-2xl overflow-hidden"
       :class="[
         composeState === 'maximized'
-          ? 'inset-4 sm:inset-8 rounded-xl'
+          ? 'inset-0 sm:inset-8 sm:rounded-xl'
           : composeState === 'minimized'
-            ? 'bottom-0 right-4 sm:right-6 w-72 rounded-t-xl'
-            : 'bottom-0 right-4 sm:right-6 w-[560px] max-w-[calc(100vw-2rem)] h-[520px] max-h-[calc(100vh-5rem)] rounded-t-xl'
+            ? 'bottom-0 left-0 right-0 sm:left-auto sm:right-6 sm:w-72 rounded-t-xl'
+            : 'inset-0 sm:inset-auto sm:bottom-0 sm:right-6 sm:w-140 sm:h-130 sm:max-h-[calc(100vh-5rem)] sm:rounded-t-xl'
       ]"
     >
       <!-- Header bar -->
@@ -238,9 +240,9 @@ const headerLabel = computed(() => {
         <span class="text-sm font-medium truncate flex-1">{{ headerLabel }}</span>
 
         <div class="flex items-center gap-0.5 shrink-0">
-          <!-- Minimize -->
+          <!-- Minimize (desktop only) -->
           <button
-            class="w-6 h-6 flex items-center justify-center rounded hover:bg-default text-muted hover:text-highlighted transition-colors"
+            class="hidden sm:flex w-6 h-6 items-center justify-center rounded hover:bg-default text-muted hover:text-highlighted transition-colors"
             title="Minimize"
             @click.stop="toggleMinimize"
           >
@@ -249,10 +251,10 @@ const headerLabel = computed(() => {
               class="text-sm"
             />
           </button>
-          <!-- Maximize / Restore -->
+          <!-- Maximize / Restore (desktop only) -->
           <button
             v-if="composeState !== 'minimized'"
-            class="w-6 h-6 flex items-center justify-center rounded hover:bg-default text-muted hover:text-highlighted transition-colors"
+            class="hidden sm:flex w-6 h-6 items-center justify-center rounded hover:bg-default text-muted hover:text-highlighted transition-colors"
             :title="composeState === 'maximized' ? 'Restore' : 'Full screen'"
             @click.stop="toggleMaximize"
           >
@@ -263,7 +265,7 @@ const headerLabel = computed(() => {
           </button>
           <!-- Close -->
           <button
-            class="w-6 h-6 flex items-center justify-center rounded hover:bg-default text-muted hover:text-highlighted transition-colors"
+            class="w-8 h-8 sm:w-6 sm:h-6 flex items-center justify-center rounded hover:bg-default text-muted hover:text-highlighted transition-colors"
             title="Close"
             @click.stop="closeCompose"
           >
@@ -516,7 +518,7 @@ const headerLabel = computed(() => {
         </div>
 
         <!-- Bottom bar -->
-        <div class="flex items-center gap-2 px-4 py-2 border-t border-default shrink-0">
+        <div class="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 border-t border-default shrink-0">
           <UButton
             label="Send"
             icon="i-lucide-send"
@@ -526,7 +528,7 @@ const headerLabel = computed(() => {
             @click="handleSend"
           />
 
-          <div class="flex items-center gap-0.5 ml-1 relative">
+          <div class="flex items-center gap-0.5 ml-0.5 sm:ml-1 relative">
             <!-- Hidden file input -->
             <input
               ref="fileInputRef"
@@ -538,7 +540,7 @@ const headerLabel = computed(() => {
 
             <button
               type="button"
-              class="w-7 h-7 flex items-center justify-center rounded-full hover:bg-elevated text-muted hover:text-highlighted transition-colors"
+              class="w-9 h-9 sm:w-7 sm:h-7 flex items-center justify-center rounded-full hover:bg-elevated text-muted hover:text-highlighted transition-colors"
               title="Attach files"
               @click="handleAttachClick"
             >
@@ -549,7 +551,7 @@ const headerLabel = computed(() => {
             </button>
             <button
               type="button"
-              class="w-7 h-7 flex items-center justify-center rounded-full hover:bg-elevated transition-colors"
+              class="w-9 h-9 sm:w-7 sm:h-7 flex items-center justify-center rounded-full hover:bg-elevated transition-colors"
               :class="showEmojiPicker ? 'bg-elevated text-highlighted' : 'text-muted hover:text-highlighted'"
               title="Insert emoji"
               @click="showEmojiPicker = !showEmojiPicker"
@@ -573,14 +575,14 @@ const headerLabel = computed(() => {
 
           <span
             v-if="draftSavedAt"
-            class="text-[11px] text-muted mr-2"
+            class="text-[11px] text-muted mr-1 sm:mr-2 hidden sm:inline"
           >
             Draft saved
           </span>
 
           <button
             type="button"
-            class="w-7 h-7 flex items-center justify-center rounded-full hover:bg-elevated text-muted hover:text-highlighted transition-colors"
+            class="w-9 h-9 sm:w-7 sm:h-7 flex items-center justify-center rounded-full hover:bg-elevated text-muted hover:text-highlighted transition-colors"
             title="Discard"
             @click="discardCompose"
           >
@@ -596,7 +598,7 @@ const headerLabel = computed(() => {
     <!-- Click outside emoji picker to close -->
     <div
       v-if="showEmojiPicker"
-      class="fixed inset-0 z-[99]"
+      class="fixed inset-0 z-99"
       @click="showEmojiPicker = false"
     />
   </Teleport>

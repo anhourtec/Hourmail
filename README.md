@@ -192,6 +192,28 @@ hourmail/
 └── .env.example
 ```
 
+## White-Labeling / Custom Branding
+
+You can fully rebrand HourMail by editing `app/app.config.ts`:
+
+```ts
+export default defineAppConfig({
+  brand: {
+    name: 'YourBrand',       // App name shown in sidebar and title
+    logo: '/logo.png',       // Logo image in public/ directory
+    author: 'Your Company'
+  },
+  ui: {
+    colors: {
+      primary: 'blue',       // Primary accent color
+      neutral: 'slate'       // Neutral/gray palette
+    }
+  }
+})
+```
+
+Replace `public/logo.png` with your own logo and update the values above. No other code changes needed.
+
 ## Useful Commands
 
 ### Delete a registered organization

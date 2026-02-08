@@ -1041,51 +1041,51 @@ function navigateToFolder(path: string) {
           <!-- Search filters dropdown -->
           <div
             v-if="showSearchFilters"
-            class="absolute top-full left-0 right-0 mt-2 bg-elevated rounded-xl shadow-xl border border-default z-50 p-5"
+            class="absolute top-full left-0 right-0 mt-2 bg-elevated rounded-xl shadow-xl border border-default z-50 p-4 sm:p-5 max-h-[80vh] overflow-y-auto"
           >
-            <div class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-3 items-center text-sm">
-              <label class="text-muted text-right whitespace-nowrap">From</label>
+            <div class="flex flex-col gap-3 sm:grid sm:grid-cols-[auto_1fr] sm:gap-x-4 sm:gap-y-3 sm:items-center text-sm">
+              <label class="text-muted sm:text-right whitespace-nowrap">From</label>
               <input
                 v-model="searchFilters.from"
                 type="text"
                 placeholder=""
-                class="bg-default border border-default rounded-md px-3 py-1.5 text-sm outline-none focus:ring-1 focus:ring-primary"
+                class="bg-default border border-default rounded-md px-3 py-1.5 text-sm outline-none focus:ring-1 focus:ring-primary w-full"
               >
 
-              <label class="text-muted text-right whitespace-nowrap">To</label>
+              <label class="text-muted sm:text-right whitespace-nowrap">To</label>
               <input
                 v-model="searchFilters.to"
                 type="text"
                 placeholder=""
-                class="bg-default border border-default rounded-md px-3 py-1.5 text-sm outline-none focus:ring-1 focus:ring-primary"
+                class="bg-default border border-default rounded-md px-3 py-1.5 text-sm outline-none focus:ring-1 focus:ring-primary w-full"
               >
 
-              <label class="text-muted text-right whitespace-nowrap">Subject</label>
+              <label class="text-muted sm:text-right whitespace-nowrap">Subject</label>
               <input
                 v-model="searchFilters.subject"
                 type="text"
                 placeholder=""
-                class="bg-default border border-default rounded-md px-3 py-1.5 text-sm outline-none focus:ring-1 focus:ring-primary"
+                class="bg-default border border-default rounded-md px-3 py-1.5 text-sm outline-none focus:ring-1 focus:ring-primary w-full"
               >
 
-              <label class="text-muted text-right whitespace-nowrap">Includes the words</label>
+              <label class="text-muted sm:text-right whitespace-nowrap">Includes the words</label>
               <input
                 v-model="searchFilters.hasWords"
                 type="text"
                 placeholder=""
-                class="bg-default border border-default rounded-md px-3 py-1.5 text-sm outline-none focus:ring-1 focus:ring-primary"
+                class="bg-default border border-default rounded-md px-3 py-1.5 text-sm outline-none focus:ring-1 focus:ring-primary w-full"
               >
 
-              <label class="text-muted text-right whitespace-nowrap">Doesn't have</label>
+              <label class="text-muted sm:text-right whitespace-nowrap">Doesn't have</label>
               <input
                 v-model="searchFilters.doesntHave"
                 type="text"
                 placeholder=""
-                class="bg-default border border-default rounded-md px-3 py-1.5 text-sm outline-none focus:ring-1 focus:ring-primary"
+                class="bg-default border border-default rounded-md px-3 py-1.5 text-sm outline-none focus:ring-1 focus:ring-primary w-full"
               >
 
-              <label class="text-muted text-right whitespace-nowrap">Size</label>
-              <div class="flex items-center gap-2">
+              <label class="text-muted sm:text-right whitespace-nowrap">Size</label>
+              <div class="flex flex-wrap items-center gap-2">
                 <select
                   v-model="searchFilters.sizeComparator"
                   class="bg-default border border-default rounded-md px-2 py-1.5 text-sm outline-none focus:ring-1 focus:ring-primary"
@@ -1101,7 +1101,7 @@ function navigateToFolder(path: string) {
                   v-model="searchFilters.size"
                   type="number"
                   placeholder=""
-                  class="bg-default border border-default rounded-md px-3 py-1.5 text-sm outline-none focus:ring-1 focus:ring-primary w-24"
+                  class="bg-default border border-default rounded-md px-3 py-1.5 text-sm outline-none focus:ring-1 focus:ring-primary w-20"
                 >
                 <select
                   v-model="searchFilters.sizeUnit"
@@ -1113,8 +1113,8 @@ function navigateToFolder(path: string) {
                 </select>
               </div>
 
-              <label class="text-muted text-right whitespace-nowrap">Date within</label>
-              <div class="flex items-center gap-2">
+              <label class="text-muted sm:text-right whitespace-nowrap">Date within</label>
+              <div class="flex flex-wrap items-center gap-2">
                 <select
                   v-model="searchFilters.datePeriod"
                   class="bg-default border border-default rounded-md px-2 py-1.5 text-sm outline-none focus:ring-1 focus:ring-primary"

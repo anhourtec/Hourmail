@@ -5,12 +5,13 @@ definePageMeta({ layout: 'mail', middleware: 'auth' })
 
 const route = useRoute()
 const { user } = useAuth()
-const { currentMessage, loadingMessage, fetchMessage, toggleRead, toggleStarred, deleteEmail, archiveEmail, sendEmail, messages } = useMail()
+const { currentMessage, loadingMessage, fetchMessage, toggleRead, toggleStarred, deleteEmail, archiveEmail, markJunk, sendEmail, messages } = useMail()
 const { openCompose } = useCompose()
 const toast = useToast()
 const idParam = route.params.id as string
 const folder = (route.query.folder as string) || 'INBOX'
 const showDetails = ref(false)
+const showMoreMenu = ref(false)
 const uid = ref(0)
 
 // Inline reply state
@@ -53,6 +54,9 @@ function showPartialFromList() {
 }
 
 onMounted(async () => {
+  // Clear stale message from previous navigation immediately
+  currentMessage.value = null
+
   // Show partial data from list cache immediately
   showPartialFromList()
 
@@ -257,6 +261,66 @@ async function handleStarToggle() {
   }
 }
 
+async function handleJunk() {
+  if (!uid.value) return
+  try {
+    await markJunk(uid.value, folder)
+    toast.add({ title: 'Moved to Junk', color: 'success', icon: 'i-lucide-check' })
+    navigateTo('/inbox')
+  } catch (err: unknown) {
+    const e = err as { data?: { message?: string } }
+    toast.add({ title: 'Move to Junk failed', description: e.data?.message || 'Please try again', color: 'error', icon: 'i-lucide-alert-circle' })
+  }
+}
+
+function handleMarkUnread() {
+  if (!uid.value) return
+  toggleRead(uid.value, false, folder)
+  navigateTo('/inbox')
+}
+
+function handlePrint() {
+  if (!currentMessage.value) return
+  const msg = currentMessage.value
+  const printWindow = window.open('', '_blank')
+  if (!printWindow) return
+  const body = msg.html || msg.text?.replace(/\n/g, '<br>') || ''
+  printWindow.document.write(`<!DOCTYPE html>
+<html>
+<head>
+<title>${msg.subject}</title>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 800px; margin: 0 auto; padding: 24px; color: #222; }
+  .header { border-bottom: 1px solid #ddd; padding-bottom: 16px; margin-bottom: 16px; }
+  .subject { font-size: 20px; margin: 0 0 12px; }
+  .meta { font-size: 13px; color: #555; line-height: 1.6; }
+  .body { font-size: 14px; line-height: 1.6; }
+  img { max-width: 100%; }
+  @media print { body { padding: 0; } }
+</style>
+</head>
+<body>
+<div class="header">
+  <h1 class="subject">${msg.subject}</h1>
+  <div class="meta">
+    <div><strong>From:</strong> ${msg.from.map(formatAddress).join(', ')}</div>
+    <div><strong>To:</strong> ${msg.to?.map(formatAddress).join(', ')}</div>
+    ${msg.cc?.length ? `<div><strong>Cc:</strong> ${msg.cc.map(formatAddress).join(', ')}</div>` : ''}
+    <div><strong>Date:</strong> ${formatFullDate(msg.date)}</div>
+  </div>
+</div>
+<div class="body">${body}</div>
+</body>
+</html>`)
+  printWindow.document.close()
+  printWindow.focus()
+  printWindow.print()
+}
+
+function closeMoreMenu() {
+  showMoreMenu.value = false
+}
+
 function formatFileSize(bytes: number) {
   if (bytes < 1024) return `${bytes} B`
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
@@ -318,6 +382,33 @@ const replyLabel = computed(() => {
         />
 
         <UButton
+          icon="i-lucide-reply"
+          variant="ghost"
+          color="neutral"
+          size="sm"
+          title="Reply"
+          @click="openReply"
+        />
+        <UButton
+          icon="i-lucide-reply-all"
+          variant="ghost"
+          color="neutral"
+          size="sm"
+          title="Reply all"
+          class="hidden sm:inline-flex"
+          @click="openReplyAll"
+        />
+        <UButton
+          icon="i-lucide-forward"
+          variant="ghost"
+          color="neutral"
+          size="sm"
+          title="Forward"
+          class="hidden sm:inline-flex"
+          @click="openForward"
+        />
+
+        <UButton
           icon="i-lucide-archive"
           variant="ghost"
           color="neutral"
@@ -333,41 +424,100 @@ const replyLabel = computed(() => {
           title="Delete"
           @click="handleDelete"
         />
-        <UButton
-          icon="i-lucide-mail"
-          variant="ghost"
-          color="neutral"
-          size="sm"
-          title="Mark as unread"
-          @click="toggleRead(uid, false, folder); navigateTo('/inbox')"
-        />
 
         <div class="flex-1" />
 
         <UButton
-          icon="i-lucide-reply"
+          icon="i-lucide-printer"
           variant="ghost"
           color="neutral"
           size="sm"
-          title="Reply"
-          @click="openReply"
+          title="Print"
+          class="hidden sm:inline-flex"
+          @click="handlePrint"
         />
-        <UButton
-          icon="i-lucide-reply-all"
-          variant="ghost"
-          color="neutral"
-          size="sm"
-          title="Reply all"
-          @click="openReplyAll"
-        />
-        <UButton
-          icon="i-lucide-forward"
-          variant="ghost"
-          color="neutral"
-          size="sm"
-          title="Forward"
-          @click="openForward"
-        />
+
+        <!-- More dropdown -->
+        <div class="relative">
+          <UButton
+            icon="i-lucide-ellipsis-vertical"
+            variant="ghost"
+            color="neutral"
+            size="sm"
+            title="More actions"
+            @click="showMoreMenu = !showMoreMenu"
+          />
+          <!-- Backdrop to close menu on outside click -->
+          <div
+            v-if="showMoreMenu"
+            class="fixed inset-0 z-40"
+            @click="closeMoreMenu"
+          />
+          <Transition
+            enter-active-class="transition ease-out duration-100"
+            enter-from-class="opacity-0 scale-95"
+            enter-to-class="opacity-100 scale-100"
+            leave-active-class="transition ease-in duration-75"
+            leave-from-class="opacity-100 scale-100"
+            leave-to-class="opacity-0 scale-95"
+          >
+            <div
+              v-if="showMoreMenu"
+              class="absolute right-0 top-full mt-1 w-48 bg-default border border-default rounded-lg shadow-lg py-1 z-50"
+            >
+              <!-- Reply All (mobile only) -->
+              <button
+                class="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-default hover:bg-elevated transition-colors sm:hidden"
+                @click="openReplyAll(); closeMoreMenu()"
+              >
+                <UIcon name="i-lucide-reply-all" class="text-base text-muted" />
+                Reply all
+              </button>
+              <!-- Forward (mobile only) -->
+              <button
+                class="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-default hover:bg-elevated transition-colors sm:hidden"
+                @click="openForward(); closeMoreMenu()"
+              >
+                <UIcon name="i-lucide-forward" class="text-base text-muted" />
+                Forward
+              </button>
+              <div class="border-t border-default my-1 sm:hidden" />
+              <!-- Mark unread -->
+              <button
+                class="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-default hover:bg-elevated transition-colors"
+                @click="handleMarkUnread(); closeMoreMenu()"
+              >
+                <UIcon name="i-lucide-mail" class="text-base text-muted" />
+                Mark as unread
+              </button>
+              <!-- Star / Unstar -->
+              <button
+                class="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-default hover:bg-elevated transition-colors"
+                @click="handleStarToggle(); closeMoreMenu()"
+              >
+                <UIcon name="i-lucide-star" class="text-base text-muted" />
+                {{ currentMessage?.flags.includes('\\Flagged') ? 'Remove star' : 'Mark as starred' }}
+              </button>
+              <div class="border-t border-default my-1" />
+              <!-- Junk -->
+              <button
+                class="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-default hover:bg-elevated transition-colors"
+                @click="handleJunk(); closeMoreMenu()"
+              >
+                <UIcon name="i-lucide-shield-alert" class="text-base text-muted" />
+                Report spam
+              </button>
+              <!-- Print (mobile only — already visible on desktop) -->
+              <button
+                class="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-default hover:bg-elevated transition-colors sm:hidden"
+                @click="handlePrint(); closeMoreMenu()"
+              >
+                <UIcon name="i-lucide-printer" class="text-base text-muted" />
+                Print
+              </button>
+            </div>
+          </Transition>
+        </div>
       </div>
 
       <!-- Email Content -->

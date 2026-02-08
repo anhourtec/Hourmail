@@ -20,7 +20,18 @@ export default defineEventHandler(async (event) => {
   }
 
   try {
-    await deleteMessage(session, password, folder, uid)
+    // Find the Trash folder
+    const allFolders = await listFolders(session, password)
+    const trashFolder = allFolders.find(f => f.specialUse === '\\Trash')
+
+    if (trashFolder && folder !== trashFolder.path) {
+      // Move to Trash instead of permanently deleting
+      await moveMessage(session, password, folder, uid, trashFolder.path)
+    } else {
+      // Already in Trash (or no Trash folder) — permanently delete
+      await deleteMessage(session, password, folder, uid)
+    }
+
     await invalidateMailCache(session.email)
     return { success: true }
   } catch (err: unknown) {

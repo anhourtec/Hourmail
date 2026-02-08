@@ -4,7 +4,7 @@ definePageMeta({ layout: 'mail', middleware: 'auth' })
 const {
   messages, totalMessages, loadingMessages, fetchMessages,
   selectedMessages, toggleSelect, selectAll, clearSelection,
-  toggleStarred, toggleRead, deleteEmail
+  toggleStarred, toggleRead, bulkToggleRead, deleteEmail, markJunk
 } = useMail()
 const page = ref(1)
 
@@ -78,9 +78,14 @@ async function bulkDelete() {
   clearSelection()
 }
 
-async function bulkMarkRead() {
+function bulkMarkRead() {
+  bulkToggleRead([...selectedMessages.value], true, 'INBOX')
+  clearSelection()
+}
+
+async function bulkMarkJunk() {
   for (const uid of selectedMessages.value) {
-    await toggleRead(uid, true, 'INBOX')
+    await markJunk(uid, 'INBOX')
   }
   clearSelection()
 }
@@ -129,6 +134,14 @@ const allSelected = computed(() =>
           size="xs"
           title="Mark as read"
           @click="bulkMarkRead"
+        />
+        <UButton
+          icon="i-lucide-shield-alert"
+          variant="ghost"
+          color="neutral"
+          size="xs"
+          title="Mark as junk"
+          @click="bulkMarkJunk"
         />
         <span class="text-xs text-muted ml-1">{{ selectedMessages.size }} selected</span>
       </template>
@@ -244,39 +257,60 @@ const allSelected = computed(() =>
         <!-- Message content (clickable link) -->
         <NuxtLink
           :to="`/inbox/${encodeMessageId(msg.messageId) || msg.uid}`"
-          class="flex items-center gap-2 flex-1 min-w-0 py-2 pr-3"
+          class="flex-1 min-w-0 py-2 pr-3"
         >
-          <!-- Sender -->
-          <span
-            class="w-32 sm:w-44 truncate shrink-0 text-sm"
-            :class="isRead(msg.flags) ? 'text-muted' : 'font-semibold'"
-          >
-            {{ senderName(msg.from) }}
-          </span>
-
-          <!-- Subject & Preview -->
-          <div class="flex-1 min-w-0 flex items-baseline gap-1">
+          <!-- Desktop: single row -->
+          <div class="hidden sm:flex items-center gap-2">
             <span
-              class="truncate text-sm"
+              class="w-44 truncate shrink-0 text-sm"
+              :class="isRead(msg.flags) ? 'text-muted' : 'font-semibold'"
+            >
+              {{ senderName(msg.from) }}
+            </span>
+            <div class="flex-1 min-w-0 flex items-baseline gap-1">
+              <span
+                class="truncate text-sm"
+                :class="isRead(msg.flags) ? 'text-muted' : 'font-medium'"
+              >
+                {{ msg.subject || '(no subject)' }}
+              </span>
+              <span
+                v-if="msg.preview"
+                class="truncate text-xs text-muted hidden md:inline"
+              >
+                — {{ msg.preview }}
+              </span>
+            </div>
+            <span
+              class="text-xs shrink-0 tabular-nums"
+              :class="isRead(msg.flags) ? 'text-muted' : 'font-medium'"
+            >
+              {{ formatDate(msg.date) }}
+            </span>
+          </div>
+          <!-- Mobile: stacked rows -->
+          <div class="sm:hidden">
+            <div class="flex items-center gap-1">
+              <span
+                class="flex-1 truncate text-sm"
+                :class="isRead(msg.flags) ? 'text-muted' : 'font-semibold'"
+              >
+                {{ senderName(msg.from) }}
+              </span>
+              <span
+                class="text-[11px] shrink-0 tabular-nums"
+                :class="isRead(msg.flags) ? 'text-muted' : 'font-medium'"
+              >
+                {{ formatDate(msg.date) }}
+              </span>
+            </div>
+            <span
+              class="block truncate text-xs mt-0.5"
               :class="isRead(msg.flags) ? 'text-muted' : 'font-medium'"
             >
               {{ msg.subject || '(no subject)' }}
             </span>
-            <span
-              v-if="msg.preview"
-              class="truncate text-xs text-muted hidden md:inline"
-            >
-              — {{ msg.preview }}
-            </span>
           </div>
-
-          <!-- Date -->
-          <span
-            class="text-xs shrink-0 tabular-nums"
-            :class="isRead(msg.flags) ? 'text-muted' : 'font-medium'"
-          >
-            {{ formatDate(msg.date) }}
-          </span>
         </NuxtLink>
       </div>
     </div>
