@@ -14,14 +14,14 @@ HourInbox is a **free, open-source, web-based email client** that connects to an
 
 **One-time setup, zero friction for users:**
 
-1. An admin registers their organization with IMAP/SMTP settings (e.g., `imap.purelymail.com`)
+1. An admin registers their organization with IMAP/SMTP settings (e.g., `imap.gmail.com:993`)
 2. Any user from that domain (e.g., `nsingh@anhourtec.com`) can instantly log in using their existing email credentials
 3. That's it — no additional registration, no configuration per user
 
 ## Features
 
 - **Modern UI** — Clean, responsive Gmail/Outlook-inspired design with dark mode
-- **IMAP/SMTP** — Works with any standard email server (Purelymail, Dovecot, Postfix, Exchange, etc.)
+- **IMAP/SMTP** — Works with any standard email server (Gmail, Dovecot, Postfix, Exchange, etc.)
 - **Organization-first** — One admin setup, unlimited users per domain
 - **Fast** — Redis-cached sessions, server-side rendering with Nuxt
 - **Mobile-friendly** — Fully responsive, works great on phones and tablets
@@ -122,8 +122,8 @@ All ports are intentionally non-standard to avoid conflicts on shared machines:
 An admin visits `/register` and enters:
 - Organization name (e.g., "Anhourtec")
 - Email domain (e.g., `anhourtec.com`)
-- IMAP host & port (e.g., `imap.purelymail.com:993`)
-- SMTP host & port (e.g., `smtp.purelymail.com:465`)
+- IMAP host & port (e.g., `imap.gmail.com:993`)
+- SMTP host & port (e.g., `smtp.gmail.com:465`)
 - TLS/SSL preferences
 
 ### User Login

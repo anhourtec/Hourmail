@@ -8,7 +8,7 @@ A modern, web-based IMAP email client that gives organizations a Gmail/Outlook-q
 
 ## Problem Statement
 
-Many organizations use third-party email servers (Purelymail, Dovecot, Postfix, etc.) with outdated web clients like Roundcube or SquirrelMail. These interfaces are:
+Many organizations use third-party email servers (Gmail, Dovecot, Postfix, etc.) with outdated web clients like Roundcube or SquirrelMail. These interfaces are:
 
 - Visually dated and difficult to use
 - Not mobile-friendly
@@ -52,9 +52,9 @@ User reads/sends email → ImapFlow (read) / Nodemailer (send) → mail server
 id                  UUID (primary key)
 name                String ("Anhourtec")
 domain              String (unique, "anhourtec.com")
-imapHost            String ("imap.purelymail.com")
+imapHost            String ("imap.gmail.com")
 imapPort            Int (993)
-smtpHost            String ("smtp.purelymail.com")
+smtpHost            String ("smtp.gmail.com")
 smtpPort            Int (465)
 tlsMode             String ("tls" | "starttls" | "none")
 rejectUnauthorized  Boolean (true)
