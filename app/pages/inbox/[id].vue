@@ -78,7 +78,7 @@ onMounted(async () => {
     } else {
       await fetchMessage(idParam, folder)
       if (currentMessage.value) {
-        uid.value = currentMessage.value.uid
+        uid.value = (currentMessage as Ref<{ uid: number }>).value.uid
       }
     }
   }
@@ -338,6 +338,13 @@ function getAttachmentIcon(contentType: string) {
   if (contentType.includes('word') || contentType.includes('document')) return 'i-lucide-file-text'
   return 'i-lucide-file'
 }
+
+DOMPurify.addHook('afterSanitizeAttributes', (node) => {
+  if (node.tagName === 'A') {
+    node.setAttribute('target', '_blank')
+    node.setAttribute('rel', 'noopener noreferrer')
+  }
+})
 
 const sanitizedHtml = computed(() => {
   if (!currentMessage.value?.html) return ''
