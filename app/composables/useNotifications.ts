@@ -10,10 +10,10 @@ function getAudioContext(): AudioContext {
 }
 
 // Generate notification sounds using Web Audio API (no external files needed)
-function playTone(frequency: number, duration: number, type: OscillatorType = 'sine', volume: number = 0.3) {
+async function playTone(frequency: number, duration: number, type: OscillatorType = 'sine', volume: number = 0.3) {
   try {
     const ctx = getAudioContext()
-    if (ctx.state === 'suspended') ctx.resume()
+    if (ctx.state === 'suspended') await ctx.resume()
 
     const oscillator = ctx.createOscillator()
     const gainNode = ctx.createGain()
@@ -84,7 +84,9 @@ export function useNotifications() {
 
   async function checkForNewEmails() {
     try {
-      const data = await $fetch<{ folders: { path: string, unseen: number }[] }>('/api/mail/folders')
+      const data = await $fetch<{ folders: { path: string, unseen: number }[] }>('/api/mail/folders', {
+        query: { refresh: 'true' }
+      })
       const inbox = data.folders.find(f => f.path === 'INBOX')
       if (!inbox) return
 
