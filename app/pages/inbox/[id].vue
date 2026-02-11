@@ -346,13 +346,73 @@ DOMPurify.addHook('afterSanitizeAttributes', (node) => {
   }
 })
 
+function scopeEmailCss(cssText: string, scope: string): string {
+  cssText = cssText
+    .replace(/@import\b[^;]*;/gi, '')
+    .replace(/expression\s*\(/gi, '')
+    .replace(/-moz-binding\s*:/gi, '')
+    .replace(/javascript\s*:/gi, '')
+
+  try {
+    const sheet = new CSSStyleSheet()
+    sheet.replaceSync(cssText)
+
+    let result = ''
+    for (const rule of Array.from(sheet.cssRules)) {
+      if (rule instanceof CSSStyleRule) {
+        const scoped = rule.selectorText.split(',').map((s) => {
+          s = s.trim()
+          if (!s) return s
+          s = s.replace(/^body\b/, scope).replace(/^html\b/, scope)
+          return s.startsWith(scope) ? s : `${scope} ${s}`
+        }).join(', ')
+        result += `${scoped} { ${rule.style.cssText} }\n`
+      } else if (rule instanceof CSSMediaRule) {
+        let media = ''
+        for (const inner of Array.from(rule.cssRules)) {
+          if (inner instanceof CSSStyleRule) {
+            const scoped = inner.selectorText.split(',').map((s) => {
+              s = s.trim()
+              if (!s) return s
+              s = s.replace(/^body\b/, scope).replace(/^html\b/, scope)
+              return s.startsWith(scope) ? s : `${scope} ${s}`
+            }).join(', ')
+            media += `${scoped} { ${inner.style.cssText} }\n`
+          }
+        }
+        result += `@media ${rule.conditionText} {\n${media}}\n`
+      }
+    }
+    return result
+  } catch {
+    return ''
+  }
+}
+
 const sanitizedHtml = computed(() => {
   if (!currentMessage.value?.html) return ''
-  return DOMPurify.sanitize(currentMessage.value.html, {
+
+  const html: string = currentMessage.value.html as string
+
+  // Extract <style> tag contents before sanitization
+  const styleBlocks = [...html.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/gi)]
+    .map(m => m[1] || '')
+    .filter(Boolean)
+
+  const cleanHtml = DOMPurify.sanitize(html, {
     FORBID_TAGS: ['script', 'style', 'iframe', 'object', 'embed', 'form', 'input', 'textarea', 'button'],
     FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover', 'onfocus', 'onblur', 'onsubmit', 'onanimationstart'],
     ALLOW_DATA_ATTR: false
   })
+
+  if (!styleBlocks.length) return cleanHtml
+
+  // Scope extracted CSS to prevent style leakage
+  const scopedCss = styleBlocks
+    .map(css => scopeEmailCss(css, '#email-body'))
+    .join('\n')
+
+  return scopedCss ? `<style>${scopedCss}</style>${cleanHtml}` : cleanHtml
 })
 
 const replyLabel = computed(() => {
@@ -640,6 +700,7 @@ const replyLabel = computed(() => {
             </div>
             <div
               v-else-if="currentMessage.html"
+              id="email-body"
               class="prose prose-sm max-w-none dark:prose-invert"
               v-html="sanitizedHtml"
             />
