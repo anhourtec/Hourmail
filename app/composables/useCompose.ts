@@ -34,7 +34,15 @@ let urlSyncInitialized = false
 let draftSaveTimer: ReturnType<typeof setInterval> | null = null
 
 function hasDraftContent(): boolean {
-  return !!(composeData.to || composeData.subject || composeData.body)
+  // Strip signature-only body — don't count it as real content
+  let body = composeData.body
+  if (body) {
+    const div = document.createElement('div')
+    div.innerHTML = body
+    div.querySelector('[data-signature]')?.remove()
+    body = div.textContent?.trim() || ''
+  }
+  return !!(composeData.to || composeData.subject || body)
 }
 
 function saveDraft() {

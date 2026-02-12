@@ -4,6 +4,7 @@ const { composeState, composeData, draftSavedAt, draftSource, closeCompose, disc
 const { addToOutbox } = useOutbox()
 const { deleteEmail } = useMail()
 const { fetchContacts, searchContacts, addSentContacts } = useContacts()
+const { signatures, fetchSignatures, getDefaultSignature } = useSignatures()
 const toast = useToast()
 
 const showCc = ref(false)
@@ -12,9 +13,10 @@ const sending = ref(false)
 const toRef = ref<HTMLInputElement>()
 const ccRef = ref<HTMLInputElement>()
 const bccRef = ref<HTMLInputElement>()
-const editorRef = ref<{ insertAtCursor: (text: string) => void }>()
+const editorRef = ref<{ insertAtCursor: (text: string) => void, insertHtmlAtEnd: (html: string) => void, removeSignature: () => void }>()
 const fileInputRef = ref<HTMLInputElement>()
 const showEmojiPicker = ref(false)
+const showSigPicker = ref(false)
 const attachments = ref<File[]>([])
 
 // Autocomplete state
@@ -22,18 +24,39 @@ const autocompleteField = ref<'to' | 'cc' | 'bcc' | null>(null)
 const autocompleteResults = ref<{ name: string, address: string }[]>([])
 const autocompleteIndex = ref(-1)
 
-watch(composeState, (state) => {
+watch(composeState, async (state) => {
   if (state === 'open') {
     showCc.value = !!composeData.cc
     showBcc.value = !!composeData.bcc
     showEmojiPicker.value = false
+    showSigPicker.value = false
     attachments.value = []
     autocompleteField.value = null
     autocompleteResults.value = []
     fetchContacts()
-    nextTick(() => toRef.value?.focus())
+    await fetchSignatures()
+    nextTick(() => {
+      toRef.value?.focus()
+      // Auto-insert default signature when body is empty
+      if (!composeData.body) {
+        const defaultSig = getDefaultSignature()
+        if (defaultSig) {
+          nextTick(() => editorRef.value?.insertHtmlAtEnd(defaultSig.body))
+        }
+      }
+    })
   }
 })
+
+function selectSignature(sigBody: string) {
+  editorRef.value?.insertHtmlAtEnd(sigBody)
+  showSigPicker.value = false
+}
+
+function removeSignature() {
+  editorRef.value?.removeSignature()
+  showSigPicker.value = false
+}
 
 function getCurrentSegment(value: string): string {
   const parts = value.split(',')
@@ -562,12 +585,61 @@ const headerLabel = computed(() => {
               />
             </button>
 
+            <!-- Signature picker -->
+            <button
+              v-if="signatures.length > 0"
+              type="button"
+              class="w-9 h-9 sm:w-7 sm:h-7 flex items-center justify-center rounded-full hover:bg-elevated transition-colors"
+              :class="showSigPicker ? 'bg-elevated text-highlighted' : 'text-muted hover:text-highlighted'"
+              title="Insert signature"
+              @click="showSigPicker = !showSigPicker"
+            >
+              <UIcon
+                name="i-lucide-pen-line"
+                class="text-sm"
+              />
+            </button>
+
             <!-- Emoji picker popup -->
             <div
               v-if="showEmojiPicker"
               class="absolute bottom-full left-0 mb-2"
             >
               <EmojiPicker @select="handleEmojiSelect" />
+            </div>
+
+            <!-- Signature picker popup -->
+            <div
+              v-if="showSigPicker"
+              class="absolute bottom-full left-0 mb-2 w-56 bg-elevated border border-default rounded-lg shadow-xl py-1 z-50"
+            >
+              <button
+                v-for="sig in signatures"
+                :key="sig.id"
+                class="w-full flex items-center gap-2 px-3 py-2 text-left text-sm hover:bg-default transition-colors"
+                @click="selectSignature(sig.body)"
+              >
+                <UIcon
+                  name="i-lucide-pen-line"
+                  class="text-muted text-xs shrink-0"
+                />
+                <span class="truncate">{{ sig.name }}</span>
+                <span
+                  v-if="sig.isDefault"
+                  class="text-[10px] text-primary ml-auto shrink-0"
+                >default</span>
+              </button>
+              <div class="border-t border-default my-1" />
+              <button
+                class="w-full flex items-center gap-2 px-3 py-2 text-left text-sm text-muted hover:bg-default transition-colors"
+                @click="removeSignature"
+              >
+                <UIcon
+                  name="i-lucide-x"
+                  class="text-xs shrink-0"
+                />
+                No signature
+              </button>
             </div>
           </div>
 
@@ -595,11 +667,11 @@ const headerLabel = computed(() => {
       </template>
     </div>
 
-    <!-- Click outside emoji picker to close -->
+    <!-- Click outside emoji/sig picker to close -->
     <div
-      v-if="showEmojiPicker"
+      v-if="showEmojiPicker || showSigPicker"
       class="fixed inset-0 z-99"
-      @click="showEmojiPicker = false"
+      @click="showEmojiPicker = false; showSigPicker = false"
     />
   </Teleport>
 </template>

@@ -23,6 +23,8 @@ export function useSettings() {
   function loadSettings(email: string) {
     if (!import.meta.client || settingsLoadedFor === email) return
     settingsLoadedFor = email
+
+    // Load from localStorage immediately (fast cache)
     try {
       const stored = localStorage.getItem(getStorageKey(email))
       if (stored) {
@@ -30,6 +32,14 @@ export function useSettings() {
         Object.assign(settings, { ...defaults, ...parsed })
       }
     } catch { /* ignore */ }
+
+    // Background sync from DB
+    $fetch('/api/settings').then((remote) => {
+      if (remote && settingsLoadedFor === email) {
+        Object.assign(settings, { ...defaults, ...remote })
+        localStorage.setItem(getStorageKey(email), JSON.stringify({ ...settings }))
+      }
+    }).catch(() => { /* silent */ })
   }
 
   function saveSettings(email: string) {
@@ -37,9 +47,14 @@ export function useSettings() {
     localStorage.setItem(getStorageKey(email), JSON.stringify({ ...settings }))
   }
 
-  function updateSetting<K extends keyof UserSettings>(email: string, key: K, value: UserSettings[K]) {
+  async function updateSetting<K extends keyof UserSettings>(email: string, key: K, value: UserSettings[K]) {
     settings[key] = value
     saveSettings(email)
+
+    await $fetch('/api/settings', {
+      method: 'PUT',
+      body: { [key]: value }
+    })
   }
 
   return {

@@ -1,3 +1,5 @@
+import { buildRawMessage } from '../../utils/smtp'
+
 export default defineEventHandler(async (event) => {
   const session = await getUserSession(event)
   if (!session) {
@@ -77,6 +79,24 @@ export default defineEventHandler(async (event) => {
       inReplyTo,
       attachments
     })
+
+    // Best-effort: append sent message to IMAP Sent folder
+    try {
+      const rawMessage = await buildRawMessage(session.email, {
+        to,
+        cc,
+        bcc,
+        subject,
+        html,
+        text,
+        inReplyTo,
+        messageId: result.messageId
+      })
+      await appendToSent(session, password, rawMessage)
+    } catch {
+      // Silent — email was already sent via SMTP
+    }
+
     await invalidateMailCache(session.email)
     return { success: true, messageId: result.messageId }
   } catch (err: unknown) {

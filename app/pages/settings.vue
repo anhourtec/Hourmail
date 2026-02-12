@@ -6,10 +6,117 @@ const { user, accounts, fetchAccounts, switchAccount, switchingAccount } = useAu
 const { clientCacheEnabled, setClientCacheEnabled, clearMessageCache } = useMail()
 const { settings, updateSetting, loadSettings } = useSettings()
 const { notificationPermission, requestPermission, playSendEmailSound, playNewEmailSound } = useNotifications()
+const { signatures, fetchSignatures, createSignature, updateSignature, deleteSignature } = useSignatures()
+const toast = useToast()
+
+// Signature editor state
+const sigEditing = ref(false)
+const sigEditId = ref<string | null>(null) // null = creating new
+const sigName = ref('')
+const sigBody = ref('')
+const sigIsDefault = ref(false)
+const sigSaving = ref(false)
+const sigEditorRef = ref<{ insertAtCursor: (text: string) => void, insertHtmlAtEnd: (html: string) => void } | null>(null)
+const sigImageInputRef = ref<HTMLInputElement | null>(null)
+
 onMounted(() => {
   if (user.value?.email) loadSettings(user.value.email)
   fetchAccounts()
+  fetchSignatures()
 })
+
+function startNewSignature() {
+  sigEditId.value = null
+  sigName.value = ''
+  sigBody.value = ''
+  sigIsDefault.value = signatures.value.length === 0
+  sigEditing.value = true
+}
+
+function startEditSignature(sig: { id: string, name: string, body: string, isDefault: boolean }) {
+  sigEditId.value = sig.id
+  sigName.value = sig.name
+  sigBody.value = sig.body
+  sigIsDefault.value = sig.isDefault
+  sigEditing.value = true
+}
+
+function cancelSigEdit() {
+  sigEditing.value = false
+  sigEditId.value = null
+  sigName.value = ''
+  sigBody.value = ''
+}
+
+async function saveSig() {
+  if (!sigName.value.trim()) return
+  sigSaving.value = true
+  try {
+    if (sigEditId.value) {
+      await updateSignature(sigEditId.value, {
+        name: sigName.value,
+        body: sigBody.value,
+        isDefault: sigIsDefault.value
+      })
+      toast.add({ title: 'Signature updated', color: 'success', icon: 'i-lucide-check' })
+    } else {
+      await createSignature(sigName.value, sigBody.value, sigIsDefault.value)
+      toast.add({ title: 'Signature created', color: 'success', icon: 'i-lucide-check' })
+    }
+    cancelSigEdit()
+  } catch (err: unknown) {
+    const e = err as { data?: { message?: string } }
+    toast.add({ title: 'Failed to save signature', description: e.data?.message, color: 'error', icon: 'i-lucide-alert-circle' })
+  } finally {
+    sigSaving.value = false
+  }
+}
+
+async function handleDeleteSig(id: string) {
+  try {
+    await deleteSignature(id)
+    toast.add({ title: 'Signature deleted', color: 'success', icon: 'i-lucide-check' })
+    if (sigEditId.value === id) cancelSigEdit()
+  } catch {
+    toast.add({ title: 'Failed to delete signature', color: 'error', icon: 'i-lucide-alert-circle' })
+  }
+}
+
+async function handleSetDefault(id: string) {
+  try {
+    await updateSignature(id, { isDefault: true })
+  } catch {
+    toast.add({ title: 'Failed to update default', color: 'error', icon: 'i-lucide-alert-circle' })
+  }
+}
+
+function handleSigImageClick() {
+  sigImageInputRef.value?.click()
+}
+
+function handleSigImageSelect(e: Event) {
+  const input = e.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file || !file.type.startsWith('image/')) return
+  const reader = new FileReader()
+  reader.onload = () => {
+    const dataUrl = reader.result as string
+    // Insert image at end of editor
+    if (sigEditorRef.value) {
+      const imgHtml = `<img src="${dataUrl}" style="max-width: 300px; height: auto;" />`
+      document.execCommand('insertHTML', false, imgHtml)
+    }
+  }
+  reader.readAsDataURL(file)
+  input.value = ''
+}
+
+function sigPreviewText(body: string): string {
+  const div = document.createElement('div')
+  div.innerHTML = body
+  const text = div.textContent || div.innerText || ''
+  return text.substring(0, 80) + (text.length > 80 ? '...' : '')
+}
 
 function handleCacheToggle(enabled: boolean) {
   setClientCacheEnabled(enabled)
@@ -21,21 +128,36 @@ function handleClearCache() {
   clearMessageCache()
 }
 
-function handleToggle(key: 'pushNotifications' | 'newEmailSound' | 'sendEmailSound', value: boolean) {
+async function handleToggle(key: 'pushNotifications' | 'newEmailSound' | 'sendEmailSound', value: boolean) {
   if (!user.value?.email) return
-  updateSetting(user.value.email, key, value)
+  try {
+    await updateSetting(user.value.email, key, value)
+    toast.add({ title: 'Setting saved', color: 'success', icon: 'i-lucide-check' })
+  } catch {
+    toast.add({ title: 'Failed to save setting', color: 'error', icon: 'i-lucide-alert-circle' })
+  }
 }
 
 async function handleEnableNotifications() {
   const granted = await requestPermission()
   if (granted && user.value?.email) {
-    updateSetting(user.value.email, 'pushNotifications', true)
+    try {
+      await updateSetting(user.value.email, 'pushNotifications', true)
+      toast.add({ title: 'Notifications enabled', color: 'success', icon: 'i-lucide-check' })
+    } catch {
+      toast.add({ title: 'Failed to save setting', color: 'error', icon: 'i-lucide-alert-circle' })
+    }
   }
 }
 
-function handlePollInterval(value: string) {
+async function handlePollInterval(value: string) {
   if (!user.value?.email) return
-  updateSetting(user.value.email, 'pollInterval', parseInt(value) || 30)
+  try {
+    await updateSetting(user.value.email, 'pollInterval', parseInt(value) || 30)
+    toast.add({ title: 'Setting saved', color: 'success', icon: 'i-lucide-check' })
+  } catch {
+    toast.add({ title: 'Failed to save setting', color: 'error', icon: 'i-lucide-alert-circle' })
+  }
 }
 </script>
 
@@ -358,6 +480,153 @@ function handlePollInterval(value: string) {
         </div>
       </section>
 
+      <!-- Signatures -->
+      <section class="mb-8">
+        <div class="flex items-center gap-2 mb-4">
+          <UIcon
+            name="i-lucide-pen-line"
+            class="text-muted"
+          />
+          <h2 class="text-xs font-semibold uppercase tracking-wider text-muted">
+            Signatures
+          </h2>
+        </div>
+
+        <div class="space-y-0 divide-y divide-default">
+          <!-- Existing signatures list -->
+          <div
+            v-for="sig in signatures"
+            :key="sig.id"
+            class="flex items-center gap-3 py-3"
+          >
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2">
+                <p class="text-sm font-medium truncate">
+                  {{ sig.name }}
+                </p>
+                <span
+                  v-if="sig.isDefault"
+                  class="text-[11px] bg-primary/10 text-primary font-medium px-2 py-0.5 rounded-full shrink-0"
+                >
+                  Default
+                </span>
+              </div>
+              <p class="text-xs text-muted truncate mt-0.5">
+                {{ sigPreviewText(sig.body) }}
+              </p>
+            </div>
+            <div class="flex items-center gap-1 shrink-0">
+              <UButton
+                v-if="!sig.isDefault"
+                label="Set default"
+                variant="ghost"
+                color="neutral"
+                size="xs"
+                @click="handleSetDefault(sig.id)"
+              />
+              <UButton
+                icon="i-lucide-pencil"
+                variant="ghost"
+                color="neutral"
+                size="xs"
+                @click="startEditSignature(sig)"
+              />
+              <UButton
+                icon="i-lucide-trash-2"
+                variant="ghost"
+                color="neutral"
+                size="xs"
+                @click="handleDeleteSig(sig.id)"
+              />
+            </div>
+          </div>
+
+          <!-- Add signature button -->
+          <div
+            v-if="!sigEditing"
+            class="py-3"
+          >
+            <UButton
+              label="Add signature"
+              icon="i-lucide-plus"
+              variant="soft"
+              color="neutral"
+              size="xs"
+              @click="startNewSignature"
+            />
+          </div>
+
+          <!-- Signature editor -->
+          <div
+            v-if="sigEditing"
+            class="py-3 space-y-3"
+          >
+            <input
+              v-model="sigName"
+              type="text"
+              placeholder="Signature name"
+              class="w-full bg-elevated border border-default rounded-md px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-primary"
+            >
+
+            <div class="border border-default rounded-lg overflow-hidden">
+              <ComposeEditor
+                ref="sigEditorRef"
+                v-model="sigBody"
+                placeholder="Write your signature..."
+                min-height="120px"
+                compact
+              />
+            </div>
+
+            <!-- Hidden file input for image insert -->
+            <input
+              ref="sigImageInputRef"
+              type="file"
+              accept="image/*"
+              class="hidden"
+              @change="handleSigImageSelect"
+            >
+
+            <div class="flex items-center gap-3 flex-wrap">
+              <UButton
+                label="Insert image"
+                icon="i-lucide-image"
+                variant="soft"
+                color="neutral"
+                size="xs"
+                @click="handleSigImageClick"
+              />
+
+              <label class="flex items-center gap-2 text-sm cursor-pointer">
+                <input
+                  v-model="sigIsDefault"
+                  type="checkbox"
+                  class="rounded border-default"
+                >
+                Set as default
+              </label>
+
+              <div class="flex-1" />
+
+              <UButton
+                label="Cancel"
+                variant="ghost"
+                color="neutral"
+                size="xs"
+                @click="cancelSigEdit"
+              />
+              <UButton
+                label="Save"
+                size="xs"
+                :loading="sigSaving"
+                :disabled="!sigName.trim()"
+                @click="saveSig"
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
       <!-- Privacy & Data -->
       <section class="mb-8">
         <div class="flex items-center gap-2 mb-4">
@@ -405,6 +674,15 @@ function handlePollInterval(value: string) {
             />
             <p>
               <strong class="text-highlighted">Sessions expire in 24 hours.</strong> After that, all session data is automatically deleted from memory.
+            </p>
+          </div>
+          <div class="flex items-start gap-2">
+            <UIcon
+              name="i-lucide-hard-drive"
+              class="text-green-500 shrink-0 mt-0.5"
+            />
+            <p>
+              <strong class="text-highlighted">Settings and signatures are stored in the database</strong> so they persist across sessions and devices.
             </p>
           </div>
         </div>

@@ -22,3 +22,28 @@ model Organization {
 
   @@map("organizations")
 }
+
+model UserSettings {
+  id                 String      @id @default(uuid())
+  email              String      @unique
+  pushNotifications  Boolean     @default(true)
+  newEmailSound      Boolean     @default(true)
+  sendEmailSound     Boolean     @default(true)
+  pollInterval       Int         @default(30)
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+  signatures         Signature[]
+  @@map("user_settings")
+}
+
+model Signature {
+  id             String       @id @default(uuid())
+  userSettingsId String
+  userSettings   UserSettings @relation(fields: [userSettingsId], references: [id], onDelete: Cascade)
+  name           String
+  body           String
+  isDefault      Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  @@map("signatures")
+}

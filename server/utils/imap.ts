@@ -691,7 +691,7 @@ export async function appendDraft(
     }
 
     const result = await client.append(draftsFolder, rawMessage, ['\\Draft', '\\Seen'])
-    return { uid: result?.uid || 0, folder: draftsFolder }
+    return { uid: (result && result.uid) || 0, folder: draftsFolder }
   } finally {
     await client.logout()
   }
@@ -714,6 +714,23 @@ export async function moveMessage(
     } finally {
       lock.release()
     }
+  } finally {
+    await client.logout()
+  }
+}
+
+export async function appendToSent(
+  session: SessionData,
+  password: string,
+  rawMessage: string | Buffer
+): Promise<void> {
+  const client = createImapClient(session, password)
+  await client.connect()
+
+  try {
+    const mailboxes = await client.list()
+    const sentFolder = mailboxes.find(m => m.specialUse === '\\Sent')?.path || 'Sent'
+    await client.append(sentFolder, rawMessage, ['\\Seen'])
   } finally {
     await client.logout()
   }

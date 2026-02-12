@@ -7,12 +7,16 @@ const route = useRoute()
 const { user } = useAuth()
 const { currentMessage, loadingMessage, fetchMessage, toggleRead, toggleStarred, deleteEmail, archiveEmail, markJunk, sendEmail, messages } = useMail()
 const { openCompose } = useCompose()
+const { signatures, fetchSignatures, getDefaultSignature } = useSignatures()
 const toast = useToast()
 const idParam = route.params.id as string
 const folder = (route.query.folder as string) || 'INBOX'
 const showDetails = ref(false)
 const showMoreMenu = ref(false)
 const uid = ref(0)
+
+// Sent replies shown in thread
+const sentReplies = ref<{ to: string, cc?: string, subject: string, html: string, date: string }[]>([])
 
 // Inline reply state
 const replyMode = ref<'none' | 'reply' | 'replyAll' | 'forward'>('none')
@@ -25,6 +29,8 @@ const showReplyCc = ref(false)
 const showReplyBcc = ref(false)
 const replySending = ref(false)
 const replyContainerRef = ref<HTMLDivElement>()
+const replyEditorRef = ref<{ insertAtCursor: (text: string) => void, insertHtmlAtEnd: (html: string) => void, removeSignature: () => void } | null>(null)
+const showReplySigPicker = ref(false)
 
 // Try to show partial data instantly from the message list
 function showPartialFromList() {
@@ -54,6 +60,7 @@ function showPartialFromList() {
 }
 
 onMounted(async () => {
+  fetchSignatures()
   // Clear stale message from previous navigation immediately
   currentMessage.value = null
 
@@ -150,6 +157,13 @@ async function handleDelete() {
   navigateTo('/inbox')
 }
 
+function insertDefaultSignatureInReply() {
+  const defaultSig = getDefaultSignature()
+  if (defaultSig) {
+    nextTick(() => replyEditorRef.value?.insertHtmlAtEnd(defaultSig.body))
+  }
+}
+
 function openReply() {
   if (!currentMessage.value) return
   const from = currentMessage.value.from[0]
@@ -164,6 +178,7 @@ function openReply() {
   showReplyCc.value = false
   showReplyBcc.value = false
   scrollToReply()
+  insertDefaultSignatureInReply()
 }
 
 function openReplyAll() {
@@ -189,6 +204,7 @@ function openReplyAll() {
   showReplyCc.value = ccAddresses.length > 0
   showReplyBcc.value = false
   scrollToReply()
+  insertDefaultSignatureInReply()
 }
 
 function openForward() {
@@ -227,14 +243,29 @@ async function handleSendReply() {
 
   replySending.value = true
   try {
+    const sentHtml = replyBody.value || ''
+    const sentTo = replyTo.value
+    const sentCc = replyCc.value || undefined
+    const sentSubject = replySubject.value
+
     await sendEmail({
-      to: replyTo.value,
-      cc: replyCc.value || undefined,
+      to: sentTo,
+      cc: sentCc,
       bcc: replyBcc.value || undefined,
-      subject: replySubject.value,
-      html: replyBody.value || undefined,
+      subject: sentSubject,
+      html: sentHtml || undefined,
       inReplyTo: replyMode.value !== 'forward' ? String(currentMessage.value?.uid) : undefined
     })
+
+    // Add sent reply to thread view
+    sentReplies.value.push({
+      to: sentTo,
+      cc: sentCc,
+      subject: sentSubject,
+      html: sentHtml,
+      date: new Date().toISOString()
+    })
+
     toast.add({ title: 'Message sent', color: 'success', icon: 'i-lucide-check' })
     closeReply()
   } catch (err: unknown) {
@@ -710,6 +741,32 @@ const replyLabel = computed(() => {
             >{{ currentMessage.text }}</pre>
           </div>
 
+          <!-- Sent replies in thread -->
+          <div
+            v-for="(reply, idx) in sentReplies"
+            :key="idx"
+            class="mt-6 border border-default rounded-xl overflow-hidden"
+          >
+            <div class="flex items-start gap-3 px-4 py-3 bg-elevated border-b border-default">
+              <div class="w-10 h-10 rounded-full bg-primary/20 text-primary flex items-center justify-center font-semibold text-sm shrink-0">
+                {{ (user?.email || '?').charAt(0).toUpperCase() }}
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2 flex-wrap">
+                  <span class="font-medium text-sm">{{ user?.name || user?.email || 'Me' }}</span>
+                  <span class="text-xs text-muted ml-auto shrink-0">{{ formatRelativeDate(reply.date) }}</span>
+                </div>
+                <div class="text-xs text-muted">
+                  to {{ reply.to }}{{ reply.cc ? `, cc: ${reply.cc}` : '' }}
+                </div>
+              </div>
+            </div>
+            <div
+              class="prose prose-sm max-w-none dark:prose-invert px-4 py-3"
+              v-html="reply.html"
+            />
+          </div>
+
           <!-- Inline Reply Compose -->
           <div
             v-if="replyMode !== 'none'"
@@ -808,6 +865,7 @@ const replyLabel = computed(() => {
 
             <!-- Rich text editor -->
             <ComposeEditor
+              ref="replyEditorRef"
               v-model="replyBody"
               placeholder="Write your reply..."
               min-height="150px"
@@ -825,7 +883,7 @@ const replyLabel = computed(() => {
                 @click="handleSendReply"
               />
 
-              <div class="flex items-center gap-0.5 ml-1">
+              <div class="flex items-center gap-0.5 ml-1 relative">
                 <button
                   type="button"
                   class="w-7 h-7 flex items-center justify-center rounded-full hover:bg-elevated text-muted hover:text-highlighted transition-colors"
@@ -856,6 +914,55 @@ const replyLabel = computed(() => {
                     class="text-sm"
                   />
                 </button>
+
+                <!-- Signature picker -->
+                <button
+                  v-if="signatures.length > 0"
+                  type="button"
+                  class="w-7 h-7 flex items-center justify-center rounded-full hover:bg-elevated transition-colors"
+                  :class="showReplySigPicker ? 'bg-elevated text-highlighted' : 'text-muted hover:text-highlighted'"
+                  title="Insert signature"
+                  @click="showReplySigPicker = !showReplySigPicker"
+                >
+                  <UIcon
+                    name="i-lucide-pen-line"
+                    class="text-sm"
+                  />
+                </button>
+
+                <!-- Signature picker popup -->
+                <div
+                  v-if="showReplySigPicker"
+                  class="absolute bottom-full left-0 mb-2 w-56 bg-elevated border border-default rounded-lg shadow-xl py-1 z-50"
+                >
+                  <button
+                    v-for="sig in signatures"
+                    :key="sig.id"
+                    class="w-full flex items-center gap-2 px-3 py-2 text-left text-sm hover:bg-default transition-colors"
+                    @click="replyEditorRef?.insertHtmlAtEnd(sig.body); showReplySigPicker = false"
+                  >
+                    <UIcon
+                      name="i-lucide-pen-line"
+                      class="text-muted text-xs shrink-0"
+                    />
+                    <span class="truncate">{{ sig.name }}</span>
+                    <span
+                      v-if="sig.isDefault"
+                      class="text-[10px] text-primary ml-auto shrink-0"
+                    >default</span>
+                  </button>
+                  <div class="border-t border-default my-1" />
+                  <button
+                    class="w-full flex items-center gap-2 px-3 py-2 text-left text-sm text-muted hover:bg-default transition-colors"
+                    @click="replyEditorRef?.removeSignature(); showReplySigPicker = false"
+                  >
+                    <UIcon
+                      name="i-lucide-x"
+                      class="text-xs shrink-0"
+                    />
+                    No signature
+                  </button>
+                </div>
               </div>
 
               <div class="flex-1" />
@@ -872,6 +979,13 @@ const replyLabel = computed(() => {
                 />
               </button>
             </div>
+
+            <!-- Click outside sig picker to close -->
+            <div
+              v-if="showReplySigPicker"
+              class="fixed inset-0 z-40"
+              @click="showReplySigPicker = false"
+            />
           </div>
 
           <!-- Reply/Forward buttons (shown when no inline reply is open) -->
