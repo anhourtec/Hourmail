@@ -404,7 +404,7 @@ const emailDocument = computed(() => {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <base target="_blank">
 <style>
-html, body { margin: 0; padding: 0; }
+html, body { margin: 0; padding: 0; background: #fff; color: #000; }
 img { max-width: 100%; height: auto; }
 </style>
 </head>
