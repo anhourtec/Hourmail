@@ -31,6 +31,7 @@ const replySending = ref(false)
 const replyContainerRef = ref<HTMLDivElement>()
 const replyEditorRef = ref<{ insertAtCursor: (text: string) => void, insertHtmlAtEnd: (html: string) => void, removeSignature: () => void } | null>(null)
 const showReplySigPicker = ref(false)
+let iframeResizeObserver: ResizeObserver | null = null
 
 // Try to show partial data instantly from the message list
 function showPartialFromList() {
@@ -92,6 +93,13 @@ onMounted(async () => {
 
   if (uid.value) {
     toggleRead(uid.value, true, folder)
+  }
+})
+
+onUnmounted(() => {
+  if (iframeResizeObserver) {
+    iframeResizeObserver.disconnect()
+    iframeResizeObserver = null
   }
 })
 
@@ -377,74 +385,60 @@ DOMPurify.addHook('afterSanitizeAttributes', (node) => {
   }
 })
 
-function scopeEmailCss(cssText: string, scope: string): string {
-  cssText = cssText
-    .replace(/@import\b[^;]*;/gi, '')
-    .replace(/expression\s*\(/gi, '')
-    .replace(/-moz-binding\s*:/gi, '')
-    .replace(/javascript\s*:/gi, '')
-
-  try {
-    const sheet = new CSSStyleSheet()
-    sheet.replaceSync(cssText)
-
-    let result = ''
-    for (const rule of Array.from(sheet.cssRules)) {
-      if (rule instanceof CSSStyleRule) {
-        const scoped = rule.selectorText.split(',').map((s) => {
-          s = s.trim()
-          if (!s) return s
-          s = s.replace(/^body\b/, scope).replace(/^html\b/, scope)
-          return s.startsWith(scope) ? s : `${scope} ${s}`
-        }).join(', ')
-        result += `${scoped} { ${rule.style.cssText} }\n`
-      } else if (rule instanceof CSSMediaRule) {
-        let media = ''
-        for (const inner of Array.from(rule.cssRules)) {
-          if (inner instanceof CSSStyleRule) {
-            const scoped = inner.selectorText.split(',').map((s) => {
-              s = s.trim()
-              if (!s) return s
-              s = s.replace(/^body\b/, scope).replace(/^html\b/, scope)
-              return s.startsWith(scope) ? s : `${scope} ${s}`
-            }).join(', ')
-            media += `${scoped} { ${inner.style.cssText} }\n`
-          }
-        }
-        result += `@media ${rule.conditionText} {\n${media}}\n`
-      }
-    }
-    return result
-  } catch {
-    return ''
-  }
-}
-
-const sanitizedHtml = computed(() => {
+const emailDocument = computed(() => {
   if (!currentMessage.value?.html) return ''
 
   const html: string = currentMessage.value.html as string
 
-  // Extract <style> tag contents before sanitization
-  const styleBlocks = [...html.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/gi)]
-    .map(m => m[1] || '')
-    .filter(Boolean)
-
+  // Allow <style> tags — they're isolated inside the sandboxed iframe
   const cleanHtml = DOMPurify.sanitize(html, {
-    FORBID_TAGS: ['script', 'style', 'iframe', 'object', 'embed', 'form', 'input', 'textarea', 'button'],
+    FORBID_TAGS: ['script', 'iframe', 'object', 'embed', 'form', 'input', 'textarea', 'button'],
     FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover', 'onfocus', 'onblur', 'onsubmit', 'onanimationstart'],
     ALLOW_DATA_ATTR: false
   })
 
-  if (!styleBlocks.length) return cleanHtml
-
-  // Scope extracted CSS to prevent style leakage
-  const scopedCss = styleBlocks
-    .map(css => scopeEmailCss(css, '#email-body'))
-    .join('\n')
-
-  return scopedCss ? `<style>${scopedCss}</style>${cleanHtml}` : cleanHtml
+  return `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<base target="_blank">
+<style>
+html, body { margin: 0; padding: 0; }
+img { max-width: 100%; height: auto; }
+</style>
+</head>
+<body>${cleanHtml}</body>
+</html>`
 })
+
+function handleIframeLoad(event: Event) {
+  const iframe = event.target as HTMLIFrameElement
+  if (!iframe.contentDocument) return
+
+  if (iframeResizeObserver) {
+    iframeResizeObserver.disconnect()
+  }
+
+  const resize = () => {
+    if (!iframe.contentDocument) return
+    iframe.style.height = iframe.contentDocument.documentElement.scrollHeight + 'px'
+  }
+
+  resize()
+
+  // Re-measure when images finish loading
+  iframe.contentDocument.querySelectorAll('img').forEach((img) => {
+    if (!img.complete) {
+      img.addEventListener('load', resize)
+      img.addEventListener('error', resize)
+    }
+  })
+
+  // Watch for dynamic layout changes
+  iframeResizeObserver = new ResizeObserver(resize)
+  iframeResizeObserver.observe(iframe.contentDocument.body)
+}
 
 const replyLabel = computed(() => {
   switch (replyMode.value) {
@@ -729,11 +723,12 @@ const replyLabel = computed(() => {
               />
               <span class="text-sm text-muted">Loading message...</span>
             </div>
-            <div
+            <iframe
               v-else-if="currentMessage.html"
-              id="email-body"
-              class="prose prose-sm max-w-none dark:prose-invert"
-              v-html="sanitizedHtml"
+              :srcdoc="emailDocument"
+              sandbox="allow-popups allow-popups-to-escape-sandbox allow-same-origin"
+              class="w-full border-0 min-h-[200px]"
+              @load="handleIframeLoad"
             />
             <pre
               v-else-if="currentMessage.text"
@@ -753,7 +748,7 @@ const replyLabel = computed(() => {
               </div>
               <div class="flex-1 min-w-0">
                 <div class="flex items-center gap-2 flex-wrap">
-                  <span class="font-medium text-sm">{{ user?.name || user?.email || 'Me' }}</span>
+                  <span class="font-medium text-sm">{{ user?.email || 'Me' }}</span>
                   <span class="text-xs text-muted ml-auto shrink-0">{{ formatRelativeDate(reply.date) }}</span>
                 </div>
                 <div class="text-xs text-muted">
